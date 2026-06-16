@@ -71,7 +71,6 @@ def render_yaml(user: Mapping[str, object], cfg: Mapping[str, object]) -> str:
             f'  tile_module: {user.get("video_tile_module", "4")}',
             f'  tile_rs: {user.get("video_tile_rs", "20")}',
         ]
-        lines.append(f'ffmpeg: "{cfg.get("ffmpeg", "ffmpeg")}"')
     # liveness — always enabled
     lines += ["liveness:", "  interval: 10s", "  timeout: 5s", "  failures: 3"]
     # lifecycle — optional

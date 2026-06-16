@@ -282,7 +282,7 @@ function SettingsModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const save = async () => {
     try {
       await apiPost("/api/config/save", {
-        dns: cfg.dns, ffmpeg: cfg.ffmpeg, socks_proxy: cfg.socks_proxy,
+        dns: cfg.dns, socks_proxy: cfg.socks_proxy,
         socks_proxy_port: cfg.socks_proxy_port, debug: !!cfg.debug,
         full_logs: !!cfg.full_logs, jitsi_domains: cfg.jitsi_domains,
       });
@@ -296,7 +296,6 @@ function SettingsModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         <button className="btn" onClick={save}>Сохранить</button>
       </>}>
       <div className="field"><label>DNS</label><input value={cfg.dns ?? ""} onChange={(e) => set("dns", e.target.value)} /></div>
-      <div className="field"><label>ffmpeg</label><input value={cfg.ffmpeg ?? ""} onChange={(e) => set("ffmpeg", e.target.value)} /></div>
       <div className="field"><label>SOCKS5 proxy</label><input value={cfg.socks_proxy ?? ""} onChange={(e) => set("socks_proxy", e.target.value)} /></div>
       <div className="field"><label>SOCKS5 port</label><input value={cfg.socks_proxy_port ?? ""} onChange={(e) => set("socks_proxy_port", e.target.value)} /></div>
       <div className="field"><label>Jitsi-домены (по одному в строке)</label>

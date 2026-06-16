@@ -44,11 +44,11 @@ def test_wb_owner_mode_omits_room():
     assert "vp8:" in out and "  fps: 60" in out
 
 
-def test_videochannel_adds_ffmpeg():
+def test_videochannel_no_ffmpeg():
     out = render_yaml(_user(carrier="jitsi", transport="videochannel"), CFG)
     assert "video:" in out
     assert '  codec: qrcode' in out
-    assert 'ffmpeg: "ffmpeg"' in out
+    assert "ffmpeg" not in out   # olcrtc no longer uses ffmpeg
 
 
 def test_max_session_duration():

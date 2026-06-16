@@ -1,9 +1,19 @@
 /* FontaineRTC global styles — every color references a theme token (--ft-*). */
 
 @font-face {
-  font-family: "Gucci";
-  src: url("/fonts/gucci.otf") format("opentype");
-  font-display: swap;
+  font-family: "TT Prosto Sans";
+  src: url("/fonts/ttprosto-thin.otf") format("opentype");
+  font-weight: 300; font-display: swap;
+}
+@font-face {
+  font-family: "TT Prosto Sans";
+  src: url("/fonts/ttprosto-regular.otf") format("opentype");
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: "TT Prosto Sans";
+  src: url("/fonts/ttprosto-bold.otf") format("opentype");
+  font-weight: 700; font-display: swap;
 }
 @font-face {
   font-family: "VK Sans Display";
@@ -15,7 +25,7 @@
 
 :root {
   color-scheme: dark;
-  --ft-font-body: "Gucci", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --ft-font-body: "TT Prosto Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   --ft-font-head: "VK Sans Display", "Segoe UI", system-ui, sans-serif;
 }
 
@@ -55,7 +65,7 @@ header.app-header {
   color: var(--ft-text-on-accent); font-size: 15px;
 }
 .logo-avatar {
-  width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
+  width: 30px; height: 30px; border-radius: 8px; object-fit: cover;
   border: 1px solid var(--ft-border-strong);
 }
 .hdr-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }

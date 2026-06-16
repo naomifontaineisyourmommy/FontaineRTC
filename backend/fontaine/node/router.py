@@ -28,7 +28,7 @@ router = APIRouter(tags=["node"])
 
 # config keys the settings UI may change
 _CONFIG_EDITABLE = {
-    "dns", "debug", "full_logs", "socks_proxy", "socks_proxy_port", "ffmpeg", "jitsi_domains",
+    "dns", "debug", "full_logs", "socks_proxy", "socks_proxy_port", "jitsi_domains",
 }
 
 

@@ -210,8 +210,8 @@ function ServerFormModal({ groups, server, onClose, onSaved }: {
         }}>Удалить</button>}
         <button className="btn" onClick={save}>Сохранить</button>
       </>}>
-      <div className="field"><label>API-ссылка (http://IP:8080/api/v1)</label>
-        <input value={f.ip} onChange={(e) => set("ip", e.target.value)} /></div>
+      <div className="field"><label>API-ссылка (http://IP:8080)</label>
+        <input value={f.ip} onChange={(e) => set("ip", e.target.value)} placeholder="http://50.114.115.100:8080" /></div>
       <div className="field"><label>API-ключ {server && "(пусто = не менять)"}</label>
         <input value={f.api_key} onChange={(e) => set("api_key", e.target.value)} placeholder="64 hex" /></div>
       <div className="field"><label>Страна</label><input value={f.country} onChange={(e) => set("country", e.target.value)} /></div>

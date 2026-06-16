@@ -3,9 +3,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# System deps: ffmpeg for the node role's videochannel transport.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg ca-certificates git \
+    && apt-get install -y --no-install-recommends ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/pyproject.toml backend/pyproject.toml

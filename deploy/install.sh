@@ -33,7 +33,6 @@ if command -v apt-get >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -qq
   apt-get install -y -qq git python3 python3-venv python3-pip curl ca-certificates >/dev/null
-  [ "$ROLE" = "node" ] && apt-get install -y -qq ffmpeg >/dev/null || true
 else
   command -v git >/dev/null || die "git required"
   command -v python3 >/dev/null || die "python3 required"

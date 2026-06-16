@@ -38,7 +38,6 @@ class Settings(BaseSettings):
 
     # --- node role ---
     binary_path: Path = Field(default=Path("./olcrtc-linux-amd64"))
-    ffmpeg: str = "ffmpeg"
     dns: str = "1.1.1.1:53"
     debug: bool = True
     full_logs: bool = False

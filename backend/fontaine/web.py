@@ -1,5 +1,8 @@
-"""Serve the built React SPA (frontend/dist) and fall back to index.html for
-client-side routing. Enabled from app.py once the frontend is built.
+"""Serve the built React SPA (frontend/dist).
+
+Any real file under dist (index.html, assets/*, fonts/*, naomi.jpg, …) is served
+directly; every other path falls back to index.html for client-side routing.
+Enabled from app.py once the frontend is built. Path override: FONTAINE_DIST_DIR.
 """
 
 import os
@@ -7,7 +10,6 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 _DIST = Path(
     os.environ.get("FONTAINE_DIST_DIR")
@@ -18,8 +20,14 @@ _DIST = Path(
 def mount_spa(app: FastAPI) -> None:
     if not _DIST.exists():
         return
-    app.mount("/assets", StaticFiles(directory=_DIST / "assets"), name="assets")
+    dist = _DIST.resolve()
+    index = dist / "index.html"
 
     @app.get("/{full_path:path}")
     def spa(full_path: str) -> FileResponse:
-        return FileResponse(_DIST / "index.html")
+        if full_path:
+            target = (dist / full_path).resolve()
+            # serve real files within dist; guard against path traversal
+            if target.is_file() and dist in target.parents:
+                return FileResponse(target)
+        return FileResponse(index)
