@@ -14,16 +14,19 @@
 - [x] Docker, .env.example, .gitignore, deploy-заглушки
 - [x] docs: ARCHITECTURE, PROTOCOL, MIGRATION
 
-## Фаза 2 — Роль node (backend)
-- [ ] Модель `Instance` целиком (все transport-параметры + transient-поля)
-- [ ] `node/yaml_writer.py` — генерация `<uid>.yaml` (из `_write_user_yaml`)
-- [ ] `node/process.py` — запуск/остановка бинарника, парсинг логов (room/peers/jitsi/wb)
-- [ ] `node/manager.py` — реестр процессов, watchdog (10с, anti-loop 5×<30с), восстановление после рестарта
-- [ ] traffic monitor (RX/TX по pid)
-- [ ] SSE-стрим логов + скачивание (одного / zip всех)
-- [ ] `node/push.py` — push состояния и error-push на admin (+ heartbeat 30с)
-- [ ] `/api/v1`: list, get_user, set_user, create_user, start/stop/delete_user, start/stop/restart_all, set_jitsi_domains, set_push_target, update_panel
-- [ ] WB owner-mode (wb_token), Jitsi-домены, max_session_duration
+## Фаза 2 — Роль node (backend) ✅ (кроме update_panel → фаза 5)
+- [x] Модель `Instance` целиком (`node/instance.py`: template + public/options/full)
+- [x] `node/yaml_writer.py` — генерация `<uid>.yaml` (перенос 1:1) + тесты
+- [x] `node/manager.py` — реестр процессов, lifecycle, парсинг логов (room/peers/jitsi/wb), персистентность (SQLite kv)
+- [x] `node/workers.py` — watchdog (10с, anti-loop 5×<30с) + traffic monitor (RX/TX по pid)
+- [x] recover() — восстановление инстансов после рестарта/ребута
+- [x] SSE-стрим логов + скачивание одного лога
+- [x] `node/push.py` — push состояния и error-push на admin (+ heartbeat 30с)
+- [x] `/api/v1`: list, get_user, set_user, create_user, start/stop/delete_user, start/stop/restart_all, set_jitsi_domains, set_push_target
+- [x] WB owner-mode (wb_token), Jitsi-домены, max_session_duration
+- [x] Смоук-тест: create/get/set/list/delete + compat + replay guard — проходит
+- [ ] `update_panel` — заменяется деплой-пайплайном (фаза 5)
+- [ ] zip-скачивание логов всех инстансов (мелочь, до фазы 4/6)
 
 ## Фаза 3 — Роль admin (backend)
 - [ ] Модели Group/Server + миграция из старой data.db

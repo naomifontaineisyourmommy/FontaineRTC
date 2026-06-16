@@ -4,6 +4,7 @@ Mounts routers and background workers according to the configured role so a
 single codebase serves both the node and the admin panel.
 """
 
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,13 +15,35 @@ from .config import Role, get_settings
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     settings = get_settings()
-    # Per-role startup (process manager / poller) is wired up during migration.
     if settings.role is Role.node:
-        pass  # TODO(phase 2): start watchdog + traffic monitor + push worker
+        from .node.manager import NodeManager
+        from .node import push, workers
+
+        mgr = NodeManager(settings)
+        push.register(mgr)
+        app.state.manager = mgr
+
+        stop = threading.Event()
+        app.state.worker_stop = stop
+        threads = [
+            threading.Thread(target=workers.watchdog, args=(mgr, stop), daemon=True),
+            threading.Thread(target=workers.traffic_monitor, args=(mgr, stop), daemon=True),
+            threading.Thread(target=push.push_worker, args=(mgr, stop), daemon=True),
+        ]
+        for t in threads:
+            t.start()
+        mgr.recover()  # respawn instances that were running before restart
+        try:
+            yield
+        finally:
+            stop.set()
+            mgr.push_event.set()  # unblock push worker
+            with mgr.lock:
+                for uid in list(mgr.procs):
+                    mgr._stop_proc_locked(uid)
     else:
-        pass  # TODO(phase 3): start poller + telegram alerter
-    yield
-    # Per-role shutdown (stop workers, terminate child processes).
+        # TODO(phase 3): start poller + telegram alerter
+        yield
 
 
 def create_app() -> FastAPI:
