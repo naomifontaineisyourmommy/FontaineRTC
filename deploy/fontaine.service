@@ -1,0 +1,14 @@
+[Unit]
+Description=FontaineRTC panel (%i)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/fontaine
+EnvironmentFile=/opt/fontaine/.env
+ExecStart=/opt/fontaine/.venv/bin/python -m fontaine
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

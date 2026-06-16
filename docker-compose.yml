@@ -1,0 +1,34 @@
+# FontaineRTC — example compose with both roles.
+# In production you typically run ONE role per host. This file shows both so the
+# protocol can be exercised locally end to end.
+
+services:
+  admin:
+    build: ./backend
+    environment:
+      FONTAINE_ROLE: admin
+      FONTAINE_PANEL_PORT: "8080"
+      FONTAINE_DATA_DIR: /data
+    ports:
+      - "8080:8080"
+    volumes:
+      - admin_data:/data
+
+  node:
+    build: ./backend
+    environment:
+      FONTAINE_ROLE: node
+      FONTAINE_PANEL_PORT: "8080"
+      FONTAINE_DATA_DIR: /data
+      # Point the node's outgoing push at the admin service:
+      FONTAINE_PUSH_URL: http://admin:8080/push/v1/1
+    ports:
+      - "8081:8080"
+    volumes:
+      - node_data:/data
+      # Mount the olcrtc binary from the host (amd64):
+      # - ./olcrtc-linux-amd64:/app/olcrtc-linux-amd64:ro
+
+volumes:
+  admin_data:
+  node_data:
