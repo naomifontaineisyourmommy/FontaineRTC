@@ -60,7 +60,7 @@ docker compose up --build
 |:-----|:---------------------------------|:------:|
 | 1    | Скелет + общее ядро (crypto/uri/compat) | ✅ |
 | 2    | Роль node (backend)              | ✅ |
-| 3    | Роль admin (backend)             | ⏳ |
+| 3    | Роль admin (backend)             | ✅ |
 | 4    | Frontend                         | ⏳ |
 | 5    | Деплой                           | ⏳ |
 | 6    | Паритет и тесты                  | ⏳ |

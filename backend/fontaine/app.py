@@ -42,8 +42,20 @@ async def _lifespan(app: FastAPI):
                 for uid in list(mgr.procs):
                     mgr._stop_proc_locked(uid)
     else:
-        # TODO(phase 3): start poller + telegram alerter
-        yield
+        from .admin.manager import AdminManager
+
+        mgr = AdminManager(settings)
+        app.state.manager = mgr
+
+        stop = threading.Event()
+        app.state.worker_stop = stop
+        poller = threading.Thread(target=mgr.poll_loop, args=(stop,), daemon=True)
+        poller.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            mgr.db.checkpoint()
 
 
 def create_app() -> FastAPI:

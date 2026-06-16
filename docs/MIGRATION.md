@@ -28,15 +28,17 @@
 - [ ] `update_panel` — заменяется деплой-пайплайном (фаза 5)
 - [ ] zip-скачивание логов всех инстансов (мелочь, до фазы 4/6)
 
-## Фаза 3 — Роль admin (backend)
-- [ ] Модели Group/Server + миграция из старой data.db
-- [ ] `admin/push_in.py` — приём `/push/v1/{server_id}`, кэш состояния
-- [ ] `admin/poller.py` — fallback-поллинг, перерегистрация push
-- [ ] `admin/nodes.py` — клиент к API ноды (все действия)
-- [ ] `admin/telegram.py` — алерты, get chat ids
-- [ ] `/api/login`, `/api/data` (агрегация), server/group CRUD, проксирование действий на ноды
-- [ ] массовые операции, рассылка Jitsi-доменов, update panel (один/все)
-- [ ] MasterDNSVPN агрегация, внешний `/api/v1` (list)
+## Фаза 3 — Роль admin (backend) ✅
+- [x] `admin/db.py` — Group/Server в SQLite (stdlib sqlite3, WAL, checkpoint)
+- [x] `admin/config_store.py` — изменяемый config.json (пароль/ключ/poll/panel_url/tg)
+- [x] `admin/manager.py` — клиент к нодам, кэш, поллер (fallback + перерегистрация push), telegram, агрегация
+- [x] `admin/router.py` — приём `/push/v1/{sid}` (state + error→TG), `/api/login` (сессии+rate-limit), `/api/data`
+- [x] group/server CRUD, проксирование `/api/node/{action}` на ноды
+- [x] массовые операции, рассылка Jitsi-доменов, update panel (один/все)
+- [x] MasterDNSVPN агрегация, внешний `/api/v1` (list)
+- [x] `admin/flags.py` — страна→флаг
+- [x] Тесты: CRUD, приём push, bad-key/unknown-server, external list — проходят (25 всего)
+- [ ] WAL-миграция из старого data.db формата (тривиально совместимо — схема та же)
 
 ## Фаза 4 — Frontend
 - [ ] Общий каркас: логин, layout, toasts, query-клиент

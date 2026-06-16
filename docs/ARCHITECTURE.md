@@ -34,7 +34,7 @@ FontaineRTC — идейное продолжение и объединение 
 |:--------------|:---------------------------------------|:------------------------------------------------------|
 | Backend       | **FastAPI** (ASGI, uvicorn)            | async, нативные SSE/WebSocket, типобезопасность       |
 | Валидация     | **Pydantic v2** / pydantic-settings    | модели запросов, конфиг из env                        |
-| БД            | **SQLite** + SQLAlchemy 2.0 (async)    | как в оригинале; WAL; миграция на Postgres при росте  |
+| БД            | **SQLite** (stdlib `sqlite3`, WAL)     | как в оригинале; синхронно; миграция на Postgres при росте |
 | Frontend      | **React + Vite + TypeScript** (SPA)    | реал-тайм дашборды, компонентный UI                   |
 | Состояние UI  | TanStack Query + Zustand               | кэш/поллинг и локальный стейт                          |
 | Деплой        | **Docker Compose**                     | переносимость; для bare-metal — `deploy/install.sh`   |
