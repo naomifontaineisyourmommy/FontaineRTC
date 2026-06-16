@@ -262,9 +262,8 @@ async def api_v1(request: Request) -> Response:
     if action == "list":
         with mgr.lock:
             users = [inst.public(u) for u in mgr.users.values()]
-        for u in users:
-            u.pop("wb_token", None)
-        return _enc(ak, {"users": users, "server": sysinfo.server_stats()})
+        return _enc(ak, {"users": users, "server": sysinfo.server_stats(),
+                         "jitsi_domains": jd})
     if action == "set_push_target":
         url = payload.get("url", "").strip()
         mgr.cfg.set("push_url", url)
@@ -287,7 +286,8 @@ async def api_v1(request: Request) -> Response:
             nt = payload.get("transport", u.get("transport"))
             if (nc, nt) not in COMPAT_SET:
                 return _enc(ak, {"error": "incompatible carrier/transport"})
-            for f in ("carrier", "transport", *inst.TRANSPORT_PARAM_DEFAULTS.keys()):
+            for f in ("carrier", "transport", "wb_token", "max_session_duration",
+                      *inst.TRANSPORT_PARAM_DEFAULTS.keys()):
                 if f in payload:
                     u[f] = payload[f]
             if "room_id" in payload:

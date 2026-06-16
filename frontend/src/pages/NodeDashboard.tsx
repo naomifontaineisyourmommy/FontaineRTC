@@ -224,12 +224,14 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
           </select>
         </div>
       )}
-      <div className="field">
-        <label>Room ID / URL</label>
-        <input value={form.custom_room_id} disabled={locked}
-          onChange={(e) => commit({ custom_room_id: e.target.value }, true)}
-          placeholder={form.carrier === "telemost" ? "обязателен" : "авто, если пусто"} />
-      </div>
+      {!(form.carrier === "jitsi" && form.jitsi_chosen_domain) && (
+        <div className="field">
+          <label>Room ID / URL</label>
+          <input value={form.custom_room_id} disabled={locked}
+            onChange={(e) => commit({ custom_room_id: e.target.value }, true)}
+            placeholder={form.carrier === "telemost" ? "обязателен" : "авто, если пусто"} />
+        </div>
+      )}
       {form.carrier === "wbstream" && (
         <div className="field">
           <label>WB Token (owner-mode)</label>

@@ -39,6 +39,10 @@ def test_crud_flow(env):
     lst = _call(c, ak, {"action": "list"})
     assert len(lst["users"]) == 1
     assert lst["users"][0]["uri"].startswith("olcrtc://jitsi?vp8channel<vp8-fps=30")
+    # admin needs full config inline (no get_user round trip)
+    assert "wb_token" in lst["users"][0]
+    assert "custom_room_id" in lst["users"][0]
+    assert "jitsi_domains" in lst
     assert _call(c, ak, {"action": "delete_user", "id": uid})["ok"]
 
 

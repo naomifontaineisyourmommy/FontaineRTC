@@ -30,10 +30,6 @@ _PEERS_RE = re.compile(r"Current peers count:\s*(\d+)(?:,\s*Devices:\s*\[([^\]]*
 _WB_TOKEN_ERR_RE = re.compile(r"livekit reconnect failed", re.I)
 _IGNORE_ROOM = inst._IGNORE_ROOM
 
-_PUSH_FIELDS = ("id", "uri", "running", "uri_live", "carrier", "transport",
-                "uptime", "traffic_rx", "traffic_tx", "peers_count", "peers_devices")
-
-
 class NodeManager:
     def __init__(self, settings: Settings):
         self.settings = settings
@@ -340,11 +336,13 @@ class NodeManager:
 
     # ── projections / push payload ──────────────────────────────────────────────
     def build_push_payload(self) -> dict:
+        """Full per-instance state so the admin panel needs no extra get_user call."""
         with self.lock:
             users = [inst.public(u) for u in self.users.values()]
         return {
             "ts": int(time.time()),
             "server": sysinfo.server_stats(),
-            "users": [{k: u.get(k) for k in _PUSH_FIELDS} for u in users],
+            "users": users,
+            "jitsi_domains": self.cfg.get("jitsi_domains", ""),
             "masterdnsvpn": sysinfo.masterdnsvpn_config(),
         }

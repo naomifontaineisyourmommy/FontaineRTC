@@ -6,12 +6,14 @@ import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 interface VUser {
   client_id: string; uri: string; running: boolean; uri_live: boolean;
   carrier: string; transport: string; uptime: number; peers_count: number;
+  custom_room_id: string; jitsi_chosen_domain: string; auto_restart: boolean;
+  wb_token: string; max_session_duration: string; [k: string]: any;
 }
 interface Server {
   id: number; name: string; ip: string; country: string; flag: string;
   group_id: number; group_name: string; online: boolean; cpu: number; ram: number;
   active_users: number; total_users: number; clients_online: number; push_active: boolean;
-  users: VUser[];
+  jitsi_domains: string; users: VUser[];
 }
 interface Group { id: number; name: string; }
 interface Data { servers: Server[]; groups: Group[]; poll_interval: number; tg_bot_token: string; tg_recipients: string; }
@@ -43,12 +45,15 @@ export function AdminDashboard() {
   return (
     <>
       <div className="row-between" style={{ padding: "14px 22px 0", flexWrap: "wrap", gap: 8 }}>
-        <input style={{ maxWidth: 280 }} placeholder="🔍 Поиск серверов / групп…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input style={{ maxWidth: 280 }} placeholder="Поиск серверов / групп…" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-          <button className="btn" onClick={() => setModal("addServer")}>＋ Сервер</button>
+          <button className="btn" onClick={() => {
+            if (groups.length === 0) toast.push("Сначала создайте группу", false);
+            else setModal("addServer");
+          }}>＋ Сервер</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("groups")}>⊞ Группы</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setModal("jitsi")}>🌐 Jitsi-домены</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setModal("tg")}>🔔 TG-алерты</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setModal("jitsi")}>Jitsi-домены</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setModal("tg")}>TG-алерты</button>
           <button className="btn btn-ghost btn-sm" onClick={() => {
             if (confirm("Обновить все ноды из их репозиториев?"))
               act(() => apiPost("/api/servers/update-all", {}), "Обновление нод запущено");
@@ -177,8 +182,11 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
         onSaved={() => { setEdit(false); onRefresh(); }} />}
       {showAdd && <CreateInstanceModal serverId={srv.id} onClose={() => setShowAdd(false)}
         onCreated={() => { setShowAdd(false); onRefresh(); }} />}
-      {editInst && <InstanceEditModal serverId={srv.id} uid={editInst} onClose={() => setEditInst(null)}
-        onSaved={() => { setEditInst(null); onRefresh(); }} />}
+      {editInst && (() => {
+        const u = srv.users.find((x) => x.client_id === editInst);
+        return u ? <InstanceEditModal serverId={srv.id} user={u} domains={srv.jitsi_domains}
+          onClose={() => setEditInst(null)} onSaved={() => { setEditInst(null); onRefresh(); }} /> : null;
+      })()}
     </Modal>
   );
 }
@@ -317,32 +325,37 @@ function CreateInstanceModal({ serverId, onClose, onCreated }: { serverId: numbe
   );
 }
 
-function InstanceEditModal({ serverId, uid, onClose, onSaved }: {
-  serverId: number; uid: string; onClose: () => void; onSaved: () => void;
+function InstanceEditModal({ serverId, user, domains, onClose, onSaved }: {
+  serverId: number; user: VUser; domains: string; onClose: () => void; onSaved: () => void;
 }) {
-  const [f, setF] = useState<Record<string, any> | null>(null);
-  const [domains, setDomains] = useState<string[]>([]);
+  // Preset fields built from the data feed — no separate get_user round trip.
+  const [f, setF] = useState<Record<string, any>>(() => ({
+    carrier: user.carrier, transport: user.transport,
+    room_id: user.custom_room_id ?? "", jitsi_domain: user.jitsi_chosen_domain ?? "",
+    wb_token: user.wb_token ?? "", auto_restart: !!user.auto_restart,
+    max_session_duration: user.max_session_duration ?? "",
+    ...Object.fromEntries((PARAM_FIELDS[user.transport] ?? []).map((p) => [p, user[p] ?? ""])),
+  }));
   const toast = useToast();
-  useEffect(() => {
-    apiPost("/api/node/get-user", { server_id: serverId, id: uid })
-      .then((u) => { setF(u); setDomains(u.options?.jitsi_domains ?? []); })
-      .catch((e) => toast.push(e instanceof Error ? e.message : "Ошибка", false));
-  }, [serverId, uid]);
-  if (!f) return <Modal title="Инстанс" onClose={onClose}><div className="faint">Загрузка…</div></Modal>;
-  const set = (k: string, v: any) => setF((s) => ({ ...(s as object), [k]: v }));
+  const set = (k: string, v: any) => setF((s) => ({ ...s, [k]: v }));
+  const domainList = domains.split("\n").map((d) => d.trim()).filter(Boolean);
   const params = PARAM_FIELDS[f.transport] ?? [];
+  const usingDomain = f.carrier === "jitsi" && !!f.jitsi_domain;
+
   const save = async () => {
     try {
       await apiPost("/api/node/set-user", {
-        server_id: serverId, id: uid, carrier: f.carrier, transport: f.transport,
+        server_id: serverId, id: user.client_id, carrier: f.carrier, transport: f.transport,
         room_id: f.room_id, jitsi_domain: f.jitsi_domain, auto_restart: f.auto_restart,
+        wb_token: f.wb_token, max_session_duration: f.max_session_duration,
         ...Object.fromEntries(params.map((p) => [p, f[p]])),
       });
       toast.push("Сохранено"); onSaved();
     } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
   };
+
   return (
-    <Modal title={`Инстанс ${uid.slice(0, 6)}`} onClose={onClose}
+    <Modal title={`Инстанс ${user.client_id.slice(0, 6)}`} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>Отмена</button>
         <button className="btn" onClick={save}>Сохранить</button>
@@ -353,17 +366,26 @@ function InstanceEditModal({ serverId, uid, onClose, onSaved }: {
       <div className="field"><label>Транспорт</label>
         <select value={f.transport} onChange={(e) => set("transport", e.target.value)}>
           {compatTransports(f.carrier).map((t) => <option key={t}>{t}</option>)}</select></div>
-      {f.carrier === "jitsi" && domains.length > 0 && (
-        <div className="field"><label>Jitsi-домен</label>
-          <select value={f.jitsi_domain ?? ""} onChange={(e) => set("jitsi_domain", e.target.value)}>
-            <option value="">— ручной —</option>{domains.map((d) => <option key={d}>{d}</option>)}</select></div>
+      {f.carrier === "jitsi" && domainList.length > 0 && (
+        <div className="field"><label>Jitsi-домен (пусто = ручной Room ID)</label>
+          <select value={f.jitsi_domain} onChange={(e) => set("jitsi_domain", e.target.value)}>
+            <option value="">— ручной —</option>{domainList.map((d) => <option key={d}>{d}</option>)}</select></div>
       )}
-      <div className="field"><label>Room ID / URL</label>
-        <input value={f.room_id ?? ""} onChange={(e) => set("room_id", e.target.value)} /></div>
+      {!usingDomain && (
+        <div className="field"><label>Room ID / URL</label>
+          <input value={f.room_id} onChange={(e) => set("room_id", e.target.value)}
+            placeholder={f.carrier === "telemost" ? "обязателен" : "авто, если пусто"} /></div>
+      )}
+      {f.carrier === "wbstream" && (
+        <div className="field"><label>WB Token (owner-mode)</label>
+          <input value={f.wb_token} onChange={(e) => set("wb_token", e.target.value)} placeholder="bearer-токен" /></div>
+      )}
       {params.map((p) => (
         <div className="field" key={p}><label>{p}</label>
           <input value={f[p] ?? ""} onChange={(e) => set(p, e.target.value)} /></div>
       ))}
+      <div className="field"><label>Макс. длительность сессии (напр. 6h)</label>
+        <input value={f.max_session_duration} onChange={(e) => set("max_session_duration", e.target.value)} /></div>
       <label className="row" style={{ gap: 8 }}>
         <input type="checkbox" style={{ width: "auto" }} checked={!!f.auto_restart} onChange={(e) => set("auto_restart", e.target.checked)} /> Автозапуск
       </label>

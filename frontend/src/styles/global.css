@@ -23,6 +23,9 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Form controls don't inherit font-family by default — force the body font. */
+button, input, select, textarea, optgroup { font-family: inherit; }
+
 :root {
   color-scheme: dark;
   --ft-font-body: "TT Prosto Sans", "Segoe UI", system-ui, -apple-system, sans-serif;

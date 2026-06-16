@@ -19,7 +19,7 @@ from .flags import flag
 
 _EMPTY_CACHE = {
     "online": False, "stats": {}, "users": [],
-    "last_seen": 0, "last_push_at": 0, "masterdnsvpn": None,
+    "last_seen": 0, "last_push_at": 0, "masterdnsvpn": None, "jitsi_domains": "",
 }
 
 
@@ -118,6 +118,7 @@ class AdminManager:
                     "last_seen": now,
                     "last_push_at": last_push,
                     "masterdnsvpn": res.get("masterdnsvpn", c.get("masterdnsvpn")),
+                    "jitsi_domains": res.get("jitsi_domains", c.get("jitsi_domains", "")),
                 })
                 if now - self._push_register_times.get(sid, 0) > reregister_every:
                     self._push_register_times[sid] = now
@@ -198,14 +199,12 @@ class AdminManager:
                 "push_active": (c.get("last_push_at", 0) > 0
                                 and now - c.get("last_push_at", 0) < stale_after),
                 "masterdnsvpn": c.get("masterdnsvpn") if c["online"] else None,
-                "users": [{
-                    "client_id": vu["id"], "uri": vu.get("uri", ""),
-                    "running": vu.get("running", False), "uri_live": vu.get("uri_live", False),
-                    "carrier": vu.get("carrier", ""), "transport": vu.get("transport", ""),
-                    "uptime": vu.get("uptime", 0),
-                    "peers_count": int(vu.get("peers_count", 0) or 0),
-                    "traffic_rx": vu.get("traffic_rx", 0), "traffic_tx": vu.get("traffic_tx", 0),
-                } for vu in c["users"]],
+                "jitsi_domains": c.get("jitsi_domains", ""),
+                # forward the full instance objects (node already sends everything the
+                # editor needs) + a client_id alias the frontend uses
+                "users": [{**vu, "client_id": vu.get("id", ""),
+                           "peers_count": int(vu.get("peers_count", 0) or 0)}
+                          for vu in c["users"]],
             }
             result["servers"].append(tile)
         result["poll_interval"] = self.cfg.get("poll_interval", 30)
