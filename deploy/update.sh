@@ -5,7 +5,7 @@
 # The interface "↺ Обновить" button does the same thing.
 #
 # Usage:  sudo bash /opt/fontaine/deploy/update.sh
-#         sudo bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/update.sh)
+#         curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/update.sh | sudo bash
 set -euo pipefail
 
 INSTALL_DIR="${FONTAINE_INSTALL_DIR:-/opt/fontaine}"

@@ -3,9 +3,9 @@
 # FontaineRTC installer — pulls everything from the public repo and sets up a
 # systemd service. Safe to re-run (acts as an update, preserving secrets/data).
 #
-# Usage (one-liner):
-#   sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
-#   sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
+# Usage (one-liner; pipe form works even without /dev/fd process substitution):
+#   curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh | sudo FONTAINE_ROLE=node  bash
+#   curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh | sudo FONTAINE_ROLE=admin bash
 #
 # Optional env:
 #   FONTAINE_PORT=8080            panel port

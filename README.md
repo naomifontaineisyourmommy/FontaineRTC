@@ -20,10 +20,10 @@
 
 ```sh
 # Нода (запускает olcrtc на этом VPS)
-sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
+curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh | sudo FONTAINE_ROLE=node bash
 
 # Admin-панель (мониторинг и управление нодами)
-sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
+curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh | sudo FONTAINE_ROLE=admin bash
 ```
 
 После установки выводятся **адрес панели**, **пароль** и **API-ключ** (один раз).
@@ -43,6 +43,10 @@ sudo bash /opt/fontaine/deploy/update.sh
 sudo bash /opt/fontaine/deploy/uninstall.sh           # сохранить config/data
 sudo bash /opt/fontaine/deploy/uninstall.sh --purge   # удалить полностью
 ```
+
+> Если шелл ругается на `/dev/fd/63` (нет поддержки `<(...)` — бывает в контейнерах),
+> используется форма выше через `curl … | … bash`. Альтернатива — скачать и запустить:
+> `curl -fsSL <url> -o i.sh && FONTAINE_ROLE=node bash i.sh`.
 
 Управление сервисом: `systemctl status fontaine` · `journalctl -fu fontaine`.
 

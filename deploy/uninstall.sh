@@ -4,7 +4,7 @@
 # instances.db). Pass --purge to remove everything including data.
 #
 # Usage:  sudo bash /opt/fontaine/deploy/uninstall.sh [--purge]
-#         sudo bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/uninstall.sh)
+#         curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/uninstall.sh | sudo bash
 set -euo pipefail
 
 INSTALL_DIR="${FONTAINE_INSTALL_DIR:-/opt/fontaine}"
