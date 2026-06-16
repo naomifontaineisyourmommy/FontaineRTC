@@ -45,6 +45,15 @@ export const DARK: Theme = {
     "--ft-log-ts": "#555a66",
     "--ft-log-id": "#3b82f6",
     "--ft-log-dest": "#38bdf8",
+    "--ft-glass-bg": "rgba(20,21,28,0.55)",
+    "--ft-glass-bg-2": "rgba(26,27,34,0.72)",
+    "--ft-glass-border": "rgba(255,255,255,0.08)",
+    "--ft-glass-highlight": "rgba(255,255,255,0.12)",
+    "--ft-glass-blur": "14px",
+    "--ft-glass-shadow": "rgba(0,0,0,0.45)",
+    "--ft-glow-1": "rgba(59,130,246,0.25)",
+    "--ft-glow-2": "rgba(139,92,246,0.22)",
+    "--ft-glow-3": "rgba(56,189,248,0.18)",
   },
 };
 
@@ -87,6 +96,15 @@ export const LIGHT: Theme = {
     "--ft-log-ts": "#6b7280",
     "--ft-log-id": "#60a5fa",
     "--ft-log-dest": "#38bdf8",
+    "--ft-glass-bg": "rgba(255,255,255,0.55)",
+    "--ft-glass-bg-2": "rgba(255,255,255,0.74)",
+    "--ft-glass-border": "rgba(20,30,50,0.10)",
+    "--ft-glass-highlight": "rgba(255,255,255,0.85)",
+    "--ft-glass-blur": "16px",
+    "--ft-glass-shadow": "rgba(20,30,50,0.14)",
+    "--ft-glow-1": "rgba(37,99,235,0.16)",
+    "--ft-glow-2": "rgba(14,165,233,0.14)",
+    "--ft-glow-3": "rgba(99,102,241,0.13)",
   },
 };
 
@@ -129,6 +147,15 @@ export const PINK: Theme = {
     "--ft-log-ts": "#8a5a74",
     "--ft-log-id": "#f0abfc",
     "--ft-log-dest": "#f9a8d4",
+    "--ft-glass-bg": "rgba(42,22,34,0.52)",
+    "--ft-glass-bg-2": "rgba(51,26,42,0.70)",
+    "--ft-glass-border": "rgba(255,210,235,0.12)",
+    "--ft-glass-highlight": "rgba(255,210,235,0.16)",
+    "--ft-glass-blur": "14px",
+    "--ft-glass-shadow": "rgba(0,0,0,0.45)",
+    "--ft-glow-1": "rgba(236,72,153,0.28)",
+    "--ft-glow-2": "rgba(240,171,252,0.22)",
+    "--ft-glow-3": "rgba(251,113,133,0.20)",
   },
 };
 

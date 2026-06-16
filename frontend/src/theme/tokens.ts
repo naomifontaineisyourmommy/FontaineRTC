@@ -68,6 +68,17 @@ export const TOKENS: ThemeToken[] = [
   { key: "--ft-log-ts", group: "Logs", label: "Log timestamp", description: "Leading [HH:MM:SS] token", fallback: "#555a66" },
   { key: "--ft-log-id", group: "Logs", label: "Log id", description: "UUIDs, install-/peer ids", fallback: "#3b82f6" },
   { key: "--ft-log-dest", group: "Logs", label: "Log destination", description: "IP:port and host:port tokens", fallback: "#38bdf8" },
+
+  // Liquid glass
+  { key: "--ft-glass-bg", group: "Glass", label: "Glass surface", description: "Translucent fill for cards/tiles/header (rgba)", fallback: "rgba(20,21,28,0.55)" },
+  { key: "--ft-glass-bg-2", group: "Glass", label: "Glass elevated", description: "Translucent fill for modals/dropdowns/popovers (rgba)", fallback: "rgba(26,27,34,0.72)" },
+  { key: "--ft-glass-border", group: "Glass", label: "Glass edge", description: "Thin border around glass surfaces (rgba)", fallback: "rgba(255,255,255,0.08)" },
+  { key: "--ft-glass-highlight", group: "Glass", label: "Glass highlight", description: "Top specular sheen on glass (rgba)", fallback: "rgba(255,255,255,0.12)" },
+  { key: "--ft-glass-blur", group: "Glass", label: "Glass blur", description: "Backdrop blur radius, e.g. 14px", fallback: "14px" },
+  { key: "--ft-glass-shadow", group: "Glass", label: "Glass shadow", description: "Drop shadow under glass (rgba)", fallback: "rgba(0,0,0,0.45)" },
+  { key: "--ft-glow-1", group: "Glass", label: "Backdrop glow 1", description: "Animated background blob color (rgba)", fallback: "rgba(59,130,246,0.25)" },
+  { key: "--ft-glow-2", group: "Glass", label: "Backdrop glow 2", description: "Animated background blob color (rgba)", fallback: "rgba(139,92,246,0.22)" },
+  { key: "--ft-glow-3", group: "Glass", label: "Backdrop glow 3", description: "Animated background blob color (rgba)", fallback: "rgba(56,189,248,0.18)" },
 ];
 
 export const TOKEN_KEYS: string[] = TOKENS.map((t) => t.key);
