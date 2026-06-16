@@ -1,34 +1,54 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { apiGet, clearToken, getRole } from "./api/client";
+import { ApiError } from "./api/client";
+import { Login } from "./pages/Login";
+import { NodeDashboard } from "./pages/NodeDashboard";
+import { AdminDashboard } from "./pages/AdminDashboard";
+import { ThemeControls } from "./theme/ThemeControls";
+import { useToast } from "./components/ui";
 
-/**
- * FontaineRTC SPA shell.
- *
- * The same bundle serves both roles; it reads /healthz to learn whether the
- * backend is running as `node` or `admin` and renders the matching dashboard.
- * NodeDashboard / AdminDashboard are filled in during migration phase 4.
- */
-function App() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["health"],
-    queryFn: async () => {
-      const r = await fetch("/healthz");
-      return r.json() as Promise<{ ok: boolean; role: "node" | "admin" }>;
-    },
-  });
+type Role = "node" | "admin";
+type AuthState = "checking" | "needed" | "ok";
 
-  if (isLoading) return <p style={{ fontFamily: "sans-serif" }}>Загрузка…</p>;
+export default function App() {
+  const [role, setRole] = useState<Role | null>(null);
+  const [auth, setAuth] = useState<AuthState>("checking");
+  const toast = useToast();
+
+  const probe = async (r: Role) => {
+    try {
+      await apiGet(r === "node" ? "/api/status" : "/api/data");
+      setAuth("ok");
+    } catch (e) {
+      setAuth(e instanceof ApiError && e.status === 401 ? "needed" : "ok");
+    }
+  };
+
+  useEffect(() => {
+    getRole()
+      .then((r) => { setRole(r); return probe(r); })
+      .catch(() => setRole(null));
+  }, []);
+
+  if (!role) return <div className="empty">Подключение к серверу…</div>;
+  if (auth === "checking") return <div className="empty">Загрузка…</div>;
+  if (auth === "needed") return <Login onDone={() => setAuth("ok")} />;
+
+  const logout = () => { clearToken(); setAuth("needed"); };
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
-      <h1>FontaineRTC</h1>
-      <p>
-        Роль бэкенда: <strong>{data?.role ?? "—"}</strong>
-      </p>
-      <p style={{ color: "#888" }}>
-        Скелет фронтенда. Дашборды переносятся на этапе 4 (см. docs/MIGRATION.md).
-      </p>
-    </main>
+    <>
+      <header className="app-header">
+        <div className="logo">
+          <span className="logo-icon">F</span> FontaineRTC
+          <span className="role-pill">{role}</span>
+        </div>
+        <div className="hdr-actions">
+          <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
+          <button className="btn btn-ghost" onClick={logout}>Выйти</button>
+        </div>
+      </header>
+      {role === "node" ? <NodeDashboard /> : <AdminDashboard />}
+    </>
   );
 }
-
-export default App;

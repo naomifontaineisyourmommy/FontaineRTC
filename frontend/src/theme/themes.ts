@@ -1,0 +1,105 @@
+/** Built-in themes. Each provides a value for every token in tokens.ts. */
+
+export interface Theme {
+  name: string;
+  builtin?: boolean;
+  tokens: Record<string, string>;
+}
+
+export const DARK: Theme = {
+  name: "Тёмная",
+  builtin: true,
+  tokens: {
+    "--ft-bg": "#0c0c0c",
+    "--ft-surface": "#15161c",
+    "--ft-surface-2": "#1a1b22",
+    "--ft-surface-3": "#0d0d15",
+    "--ft-border": "#252535",
+    "--ft-border-strong": "#3a3a4a",
+    "--ft-text": "#e0e0e0",
+    "--ft-text-muted": "#9a9aae",
+    "--ft-text-faint": "#5a5a6a",
+    "--ft-text-on-accent": "#ffffff",
+    "--ft-accent": "#3b82f6",
+    "--ft-accent-hover": "#2f6fd6",
+    "--ft-accent-soft": "rgba(59,130,246,0.15)",
+    "--ft-success": "#22c55e",
+    "--ft-success-soft": "rgba(34,197,94,0.15)",
+    "--ft-danger": "#ef4444",
+    "--ft-danger-hover": "#dc2626",
+    "--ft-warning": "#f59e0b",
+    "--ft-info": "#38bdf8",
+    "--ft-header-bg": "#111217",
+    "--ft-overlay": "rgba(0,0,0,0.6)",
+    "--ft-shadow": "rgba(0,0,0,0.4)",
+    "--ft-log-bg": "#07070b",
+    "--ft-log-text": "#c8d0d8",
+    "--ft-scrollbar": "#2a2a3a",
+  },
+};
+
+export const LIGHT: Theme = {
+  name: "Светлая",
+  builtin: true,
+  tokens: {
+    "--ft-bg": "#f5f6f8",
+    "--ft-surface": "#ffffff",
+    "--ft-surface-2": "#ffffff",
+    "--ft-surface-3": "#eef0f4",
+    "--ft-border": "#d8dce4",
+    "--ft-border-strong": "#b8bec8",
+    "--ft-text": "#1a1d24",
+    "--ft-text-muted": "#5a6270",
+    "--ft-text-faint": "#9aa0ac",
+    "--ft-text-on-accent": "#ffffff",
+    "--ft-accent": "#2563eb",
+    "--ft-accent-hover": "#1d4ed8",
+    "--ft-accent-soft": "rgba(37,99,235,0.12)",
+    "--ft-success": "#16a34a",
+    "--ft-success-soft": "rgba(22,163,74,0.12)",
+    "--ft-danger": "#dc2626",
+    "--ft-danger-hover": "#b91c1c",
+    "--ft-warning": "#d97706",
+    "--ft-info": "#0284c7",
+    "--ft-header-bg": "#ffffff",
+    "--ft-overlay": "rgba(15,23,42,0.4)",
+    "--ft-shadow": "rgba(20,30,50,0.12)",
+    "--ft-log-bg": "#0d1117",
+    "--ft-log-text": "#c8d0d8",
+    "--ft-scrollbar": "#c4ccd6",
+  },
+};
+
+export const PINK: Theme = {
+  name: "Розовая",
+  builtin: true,
+  tokens: {
+    "--ft-bg": "#1a0f17",
+    "--ft-surface": "#2a1622",
+    "--ft-surface-2": "#331a2a",
+    "--ft-surface-3": "#1f1019",
+    "--ft-border": "#4a2540",
+    "--ft-border-strong": "#6a3a5a",
+    "--ft-text": "#ffe6f3",
+    "--ft-text-muted": "#d8a8c4",
+    "--ft-text-faint": "#a06a88",
+    "--ft-text-on-accent": "#ffffff",
+    "--ft-accent": "#ec4899",
+    "--ft-accent-hover": "#db2777",
+    "--ft-accent-soft": "rgba(236,72,153,0.18)",
+    "--ft-success": "#34d399",
+    "--ft-success-soft": "rgba(52,211,153,0.15)",
+    "--ft-danger": "#fb7185",
+    "--ft-danger-hover": "#f43f5e",
+    "--ft-warning": "#fbbf24",
+    "--ft-info": "#f0abfc",
+    "--ft-header-bg": "#2a1622",
+    "--ft-overlay": "rgba(26,15,23,0.7)",
+    "--ft-shadow": "rgba(0,0,0,0.45)",
+    "--ft-log-bg": "#150b11",
+    "--ft-log-text": "#f0d0e2",
+    "--ft-scrollbar": "#4a2540",
+  },
+};
+
+export const BUILTIN_THEMES: Theme[] = [DARK, LIGHT, PINK];

@@ -19,8 +19,15 @@
 - БД: **SQLite** (SQLAlchemy), деплой через **Docker** или `deploy/install.sh`
 - Протокол node↔admin: совместим с оригиналами (Hash-CTR + HMAC-SHA256)
 
-Подробнее — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) и
-[docs/PROTOCOL.md](docs/PROTOCOL.md).
+Подробнее — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
+[docs/PROTOCOL.md](docs/PROTOCOL.md) и [docs/THEMES.md](docs/THEMES.md).
+
+## Темы оформления
+
+В интерфейсе (🎨 в шапке) переключаются темы. Встроенные: **Тёмная**, **Светлая**,
+**Розовая**. Можно **скачать шаблон** текущей темы (JSON с описанием каждого
+элемента) и **загрузить свою** тему файлом — она сохраняется локально в браузере.
+Каждый элемент интерфейса описан семантическим токеном — см. [docs/THEMES.md](docs/THEMES.md).
 
 ## Структура
 
@@ -61,6 +68,6 @@ docker compose up --build
 | 1    | Скелет + общее ядро (crypto/uri/compat) | ✅ |
 | 2    | Роль node (backend)              | ✅ |
 | 3    | Роль admin (backend)             | ✅ |
-| 4    | Frontend                         | ⏳ |
+| 4    | Frontend + темы                  | ✅ |
 | 5    | Деплой                           | ⏳ |
 | 6    | Паритет и тесты                  | ⏳ |

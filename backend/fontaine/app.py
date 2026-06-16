@@ -79,8 +79,9 @@ def create_app() -> FastAPI:
 
         app.include_router(admin_router)
 
-    # SPA is served last so API routes take precedence. Enabled once built.
-    # from .web import mount_spa
-    # mount_spa(app)
+    # SPA served last so API routes take precedence (no-op if frontend/dist absent).
+    from .web import mount_spa
+
+    mount_spa(app)
 
     return app

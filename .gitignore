@@ -23,6 +23,7 @@ olcrtc-linux-amd64
 # Node / frontend
 node_modules/
 frontend/dist/
+*.tsbuildinfo
 *.local
 
 # OS / editors
