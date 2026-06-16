@@ -168,22 +168,47 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--ft-border-strong); }
 
 /* ── instance tabs (node) ── */
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; padding: 14px 22px 0; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; padding: 14px 22px 4px; }
 .tab {
-  padding: 8px 14px; border-radius: 9px 9px 0 0; cursor: pointer; font-size: 0.85rem;
-  background: var(--ft-surface); border: 1px solid var(--ft-border); border-bottom: none; color: var(--ft-text-muted);
+  padding: 8px 14px; border-radius: 9px; cursor: pointer; font-size: 0.85rem;
+  background: var(--ft-surface); border: 1px solid var(--ft-border); color: var(--ft-text-muted);
 }
-.tab.active { background: var(--ft-surface-2); color: var(--ft-text); }
+.tab.active { background: var(--ft-surface-2); color: var(--ft-text); border-color: var(--ft-accent); }
 .workspace { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 16px 22px; }
 @media (max-width: 820px) { .workspace { grid-template-columns: 1fr; } }
 
 /* ── log viewer ── */
 .log {
   background: var(--ft-log-bg); color: var(--ft-log-text);
-  font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.78rem;
-  border-radius: 10px; padding: 12px; height: 60vh; overflow: auto; white-space: pre-wrap;
+  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; font-size: 0.78rem;
+  line-height: 1.6; border-radius: 10px; padding: 12px; height: 60vh; overflow: auto;
   border: 1px solid var(--ft-border);
 }
+.log .ll { display: block; padding: 0 3px; border-radius: 3px; color: var(--ft-log-base); white-space: pre-wrap; word-break: break-word; }
+.log .ll:hover { background: rgba(127, 127, 127, 0.08); }
+.log .ll-crit { color: var(--ft-log-crit); font-weight: 600; }
+.log .ll-attn { color: var(--ft-log-warn); }
+.log .ll-dim { color: var(--ft-log-dim); }
+.log .ll-err { color: var(--ft-log-err); }
+.log .ll-ok { color: var(--ft-log-ok); }
+.log .ll-okhi { color: var(--ft-log-okhi); }
+.log .ll-info { color: var(--ft-log-base); }
+.log .tok-ts { color: var(--ft-log-ts); }
+.log .tok-id { color: var(--ft-log-id); }
+.log .tok-dest { color: var(--ft-log-dest); }
+.log .tok-b { font-weight: 600; }
+
+/* ── connected-clients popover ── */
+.peers { position: relative; cursor: default; }
+.peers-pop {
+  display: none; position: absolute; bottom: 100%; left: 0; margin-bottom: 6px; z-index: 50;
+  min-width: 180px; max-width: 300px; max-height: 220px; overflow: auto;
+  background: var(--ft-surface-2); border: 1px solid var(--ft-border); border-radius: 9px;
+  padding: 8px; box-shadow: 0 10px 30px var(--ft-shadow);
+}
+.peers:hover .peers-pop { display: block; }
+.peers-title { font-size: 0.7rem; color: var(--ft-text-faint); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+.peers-hwid { font-family: monospace; font-size: 0.74rem; color: var(--ft-info); word-break: break-all; line-height: 1.5; }
 
 /* ── misc ── */
 .row { display: flex; gap: 10px; align-items: center; }

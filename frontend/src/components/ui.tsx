@@ -58,7 +58,25 @@ export function useToast(): ToastCtx {
 }
 
 export function copy(text: string): void {
-  navigator.clipboard?.writeText(text).catch(() => {});
+  // navigator.clipboard requires a secure context (HTTPS/localhost). The panel
+  // is usually served over plain HTTP, so fall back to execCommand.
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text: string): void {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand("copy"); } catch { /* ignore */ }
+  document.body.removeChild(ta);
 }
 
 export function fmtBytes(n: number): string {
@@ -72,4 +90,20 @@ export function fmtUptime(s: number): string {
   if (!s) return "—";
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
   return h ? `${h}ч ${m}м` : `${m}м`;
+}
+
+/** Connected-clients counter with a themed hover popover listing their HWIDs. */
+export function Peers({ count, devices }: { count: number; devices?: string[] }) {
+  const list = devices ?? [];
+  return (
+    <span className="peers">
+      👥 {count}
+      <span className="peers-pop">
+        <div className="peers-title">Подключённые HWID</div>
+        {list.length
+          ? list.map((d) => <div key={d} className="peers-hwid">{d}</div>)
+          : <div className="faint">Никто не подключён</div>}
+      </span>
+    </span>
+  );
 }

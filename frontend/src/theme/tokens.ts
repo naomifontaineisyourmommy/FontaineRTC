@@ -56,6 +56,18 @@ export const TOKENS: ThemeToken[] = [
   { key: "--ft-log-bg", group: "Components", label: "Log background", description: "Live log / terminal area", fallback: "#07070b" },
   { key: "--ft-log-text", group: "Components", label: "Log text", description: "Live log text", fallback: "#c8d0d8" },
   { key: "--ft-scrollbar", group: "Components", label: "Scrollbar", description: "Custom scrollbar thumb", fallback: "#2a2a3a" },
+
+  // Log highlighting
+  { key: "--ft-log-base", group: "Logs", label: "Log base line", description: "Default/info log line", fallback: "#9ca3af" },
+  { key: "--ft-log-crit", group: "Logs", label: "Log critical", description: "ERROR / panic / fatal lines", fallback: "#f87171" },
+  { key: "--ft-log-err", group: "Logs", label: "Log error", description: "Connection drops, EOF, failures", fallback: "#f87171" },
+  { key: "--ft-log-warn", group: "Logs", label: "Log warning", description: "WARN / reconnect / disconnect", fallback: "#fb923c" },
+  { key: "--ft-log-ok", group: "Logs", label: "Log success", description: "Connected / joined / opened", fallback: "#34d399" },
+  { key: "--ft-log-okhi", group: "Logs", label: "Log success (strong)", description: "Healthy/alive heartbeats", fallback: "#22c55e" },
+  { key: "--ft-log-dim", group: "Logs", label: "Log dim", description: "TRACE / DEBUG / xmpp noise", fallback: "#6b7280" },
+  { key: "--ft-log-ts", group: "Logs", label: "Log timestamp", description: "Leading [HH:MM:SS] token", fallback: "#555a66" },
+  { key: "--ft-log-id", group: "Logs", label: "Log id", description: "UUIDs, install-/peer ids", fallback: "#3b82f6" },
+  { key: "--ft-log-dest", group: "Logs", label: "Log destination", description: "IP:port and host:port tokens", fallback: "#38bdf8" },
 ];
 
 export const TOKEN_KEYS: string[] = TOKENS.map((t) => t.key);

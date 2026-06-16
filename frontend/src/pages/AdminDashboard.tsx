@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api/client";
-import { Modal, copy, fmtUptime, useToast } from "../components/ui";
+import { Modal, Peers, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 
 interface VUser {
   client_id: string; uri: string; running: boolean; uri_live: boolean;
   carrier: string; transport: string; uptime: number; peers_count: number;
+  peers_devices: string[]; traffic_rx: number; traffic_tx: number;
   custom_room_id: string; jitsi_chosen_domain: string; auto_restart: boolean;
   wb_token: string; max_session_duration: string; [k: string]: any;
 }
@@ -16,7 +17,7 @@ interface Server {
   jitsi_domains: string; users: VUser[];
 }
 interface Group { id: number; name: string; }
-interface Data { servers: Server[]; groups: Group[]; poll_interval: number; tg_bot_token: string; tg_recipients: string; }
+interface Data { servers: Server[]; groups: Group[]; tg_bot_token: string; tg_recipients: string; }
 
 export function AdminDashboard() {
   const [data, setData] = useState<Data | null>(null);
@@ -62,7 +63,6 @@ export function AdminDashboard() {
             if (confirm("Обновить эту admin-панель и перезапустить сервис?"))
               act(() => apiPost("/api/update"), "Обновление запущено, сервис перезапустится");
           }}>↺ Обновить панель</button>
-          {data && <PollInterval value={data.poll_interval} onSaved={refresh} />}
         </div>
       </div>
 
@@ -107,24 +107,10 @@ function Tile({ s, onClick }: { s: Server; onClick: () => void }) {
       </div>
       <div className="tile-meta">
         <span>CPU {s.cpu}%</span><span>RAM {s.ram}%</span>
-        <span>▶ {s.active_users}/{s.total_users}</span><span>👥 {s.clients_online}</span>
+        <span>▶ {s.active_users}/{s.total_users}</span>
+        <Peers count={s.clients_online} devices={s.users.flatMap((u) => u.peers_devices ?? [])} />
       </div>
     </div>
-  );
-}
-
-function PollInterval({ value, onSaved }: { value: number; onSaved: () => void }) {
-  const [v, setV] = useState(String(value));
-  const toast = useToast();
-  useEffect(() => setV(String(value)), [value]);
-  return (
-    <span className="row" style={{ gap: 4 }}>
-      <input style={{ width: 60 }} value={v} onChange={(e) => setV(e.target.value)} title="Интервал поллинга, с" />
-      <button className="btn btn-ghost btn-sm" onClick={async () => {
-        try { await apiPost("/api/poll-interval", { seconds: parseInt(v) }); toast.push("Интервал сохранён"); onSaved(); }
-        catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
-      }}>OK</button>
-    </span>
   );
 }
 
@@ -150,7 +136,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
       <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <span className={`badge ${srv.online ? "badge-on" : "badge-off"}`}>{srv.online ? "online" : "offline"}</span>
         <span className="muted">CPU {srv.cpu}% · RAM {srv.ram}%</span>
-        <span className="muted">👥 {srv.clients_online}</span>
+        <span className="muted"><Peers count={srv.clients_online} devices={srv.users.flatMap((u) => u.peers_devices ?? [])} /></span>
         <button className="btn btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAdd(true)}>＋ Инстанс</button>
       </div>
       {srv.users.length === 0 && <div className="faint" style={{ padding: "8px 0" }}>Нет инстансов.</div>}
@@ -174,7 +160,10 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
             </span>
           </div>
           <div className="tile-meta" style={{ marginTop: 6 }}>
-            <span>⏱ {fmtUptime(u.uptime)}</span><span>👥 {u.peers_count}</span>
+            <span>⏱ {fmtUptime(u.uptime)}</span>
+            <Peers count={u.peers_count} devices={u.peers_devices} />
+            <span>↓ {fmtBytes(u.traffic_rx)}</span>
+            <span>↑ {fmtBytes(u.traffic_tx)}</span>
           </div>
         </div>
       ))}

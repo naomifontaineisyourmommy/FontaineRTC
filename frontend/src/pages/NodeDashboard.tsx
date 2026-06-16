@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, sseUrl } from "../api/client";
-import { Modal, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
+import { Modal, Peers, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
+import { highlightLine } from "../lib/logHighlight";
 
 interface Instance {
   id: string; carrier: string; transport: string; running: boolean;
   uri: string; uri_live: boolean; uptime: number; peers_count: number;
+  peers_devices: string[];
   traffic_rx: number; traffic_tx: number; custom_room_id: string;
   jitsi_chosen_domain: string; auto_restart: boolean; wb_token: string;
   max_session_duration: string; key: string; [k: string]: any;
@@ -190,7 +192,7 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
       <div className="uri" style={{ marginBottom: 10 }}>{inst.uri}</div>
       <div className="tile-meta" style={{ marginBottom: 10 }}>
         <span>⏱ {fmtUptime(inst.uptime)}</span>
-        <span>👥 {inst.peers_count}</span>
+        <Peers count={inst.peers_count} devices={inst.peers_devices} />
         <span>↓ {fmtBytes(inst.traffic_rx)}</span>
         <span>↑ {fmtBytes(inst.traffic_tx)}</span>
       </div>
@@ -273,7 +275,17 @@ function LogView({ uid }: { uid: string }) {
     return () => es.close();
   }, [uid]);
   useEffect(() => { if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight; }, [lines]);
-  return <div className="log" ref={boxRef}>{lines.join("\n") || "Логи появятся после запуска…"}</div>;
+  return (
+    <div
+      className="log"
+      ref={boxRef}
+      dangerouslySetInnerHTML={{
+        __html: lines.length
+          ? lines.map(highlightLine).join("")
+          : '<span class="faint">Логи появятся после запуска…</span>',
+      }}
+    />
+  );
 }
 
 function SettingsModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {

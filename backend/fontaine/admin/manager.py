@@ -222,6 +222,7 @@ class AdminManager:
                     "client_id": vu.get("id", ""), "uri": vu.get("uri", ""),
                     "status": "active" if active else "inactive",
                     "peers_count": int(vu.get("peers_count", 0) or 0),
+                    "peers_devices": vu.get("peers_devices", []),
                     "server_name": srv["name"], "server_country": srv["country"],
                     "group_id": srv.get("group_id"),
                 })
