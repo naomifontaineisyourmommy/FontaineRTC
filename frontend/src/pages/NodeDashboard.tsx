@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, sseUrl } from "../api/client";
-import { Modal, Peers, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
+import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 import { highlightLine } from "../lib/logHighlight";
 
@@ -253,21 +253,22 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
         <input value={form.max_session_duration} disabled={locked}
           onChange={(e) => commit({ max_session_duration: e.target.value }, true)} />
       </div>
-      <label className="row" style={{ gap: 8 }}>
-        <input type="checkbox" style={{ width: "auto" }} checked={form.auto_restart} disabled={locked}
-          onChange={(e) => commit({ auto_restart: e.target.checked })} /> Автозапуск
-      </label>
+      <Switch checked={form.auto_restart} disabled={locked}
+        onChange={(v) => commit({ auto_restart: v })} label="Автозапуск" />
     </div>
   );
 }
 
 function LogView({ uid }: { uid: string }) {
   const [lines, setLines] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    setLines([]);
+    setLines([]);          // drop the previous instance's logs immediately
+    setLoading(true);
     const es = new EventSource(sseUrl(`/api/logs/stream/${uid}`));
     es.onmessage = (ev) => {
+      setLoading(false);   // first byte (data or keepalive) = stream is live
       if (ev.data === ":ka") return;
       if (ev.data === "__CLEAR__") { setLines([]); return; }
       setLines((l) => [...l.slice(-1000), ev.data]);
@@ -275,6 +276,16 @@ function LogView({ uid }: { uid: string }) {
     return () => es.close();
   }, [uid]);
   useEffect(() => { if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight; }, [lines]);
+
+  if (loading) {
+    return (
+      <div className="log" ref={boxRef}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div key={i} className="sk-line" style={{ width: `${40 + ((i * 23) % 55)}%` }} />
+        ))}
+      </div>
+    );
+  }
   return (
     <div
       className="log"
@@ -314,12 +325,10 @@ function SettingsModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
       <div className="field"><label>SOCKS5 port</label><input value={cfg.socks_proxy_port ?? ""} onChange={(e) => set("socks_proxy_port", e.target.value)} /></div>
       <div className="field"><label>Jitsi-домены (по одному в строке)</label>
         <textarea rows={4} value={cfg.jitsi_domains ?? ""} onChange={(e) => set("jitsi_domains", e.target.value)} /></div>
-      <label className="row" style={{ gap: 8, marginBottom: 8 }}>
-        <input type="checkbox" style={{ width: "auto" }} checked={!!cfg.debug} onChange={(e) => set("debug", e.target.checked)} /> Debug-логи
-      </label>
-      <label className="row" style={{ gap: 8 }}>
-        <input type="checkbox" style={{ width: "auto" }} checked={!!cfg.full_logs} onChange={(e) => set("full_logs", e.target.checked)} /> Хранить полные логи
-      </label>
+      <div style={{ marginBottom: 10 }}>
+        <Switch checked={!!cfg.debug} onChange={(v) => set("debug", v)} label="Debug-логи" />
+      </div>
+      <Switch checked={!!cfg.full_logs} onChange={(v) => set("full_logs", v)} label="Хранить полные логи" />
     </Modal>
   );
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api/client";
-import { Modal, Peers, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
+import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 
 interface VUser {
@@ -375,9 +375,7 @@ function InstanceEditModal({ serverId, user, domains, onClose, onSaved }: {
       ))}
       <div className="field"><label>Макс. длительность сессии (напр. 6h)</label>
         <input value={f.max_session_duration} onChange={(e) => set("max_session_duration", e.target.value)} /></div>
-      <label className="row" style={{ gap: 8 }}>
-        <input type="checkbox" style={{ width: "auto" }} checked={!!f.auto_restart} onChange={(e) => set("auto_restart", e.target.checked)} /> Автозапуск
-      </label>
+      <Switch checked={!!f.auto_restart} onChange={(v) => set("auto_restart", v)} label="Автозапуск" />
     </Modal>
   );
 }

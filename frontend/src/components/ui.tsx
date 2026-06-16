@@ -2,8 +2,12 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 // ── Modal ──────────────────────────────────────────────────────────────────--
+// Rendered into document.body via a portal: a glass ancestor (backdrop-filter)
+// becomes the containing block for position:fixed, which would otherwise clip a
+// nested modal inside its parent.
 export function Modal({
   title, onClose, children, footer,
 }: {
@@ -12,7 +16,7 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
 }) {
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
@@ -22,7 +26,8 @@ export function Modal({
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -55,6 +60,25 @@ export function useToast(): ToastCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useToast must be used within ToastProvider");
   return ctx;
+}
+
+/** Liquid-glass switch toggle (drop-in replacement for a checkbox). */
+export function Switch({
+  checked, onChange, label, disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label?: ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <label className={`switch ${disabled ? "switch-disabled" : ""}`}>
+      <input type="checkbox" checked={checked} disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)} />
+      <span className="switch-track"><span className="switch-thumb" /></span>
+      {label != null && <span className="switch-label">{label}</span>}
+    </label>
+  );
 }
 
 export function copy(text: string): void {

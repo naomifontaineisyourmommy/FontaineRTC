@@ -45,7 +45,12 @@ export function ThemeControls({ onToast }: { onToast?: (msg: string, ok?: boolea
                 className={`dropdown-item ${t.name === current.name ? "active" : ""}`}
                 onClick={() => { select(t.name); setOpen(false); }}
               >
-                <span className="swatch" style={{ background: t.tokens["--ft-accent"] }} />
+                <span
+                  className="swatch"
+                  style={{
+                    background: `linear-gradient(135deg, ${t.tokens["--ft-surface"]} 0 50%, ${t.tokens["--ft-accent"]} 50% 100%)`,
+                  }}
+                />
                 <span className="dropdown-item-label">{t.name}</span>
                 {!t.builtin && (
                   <button

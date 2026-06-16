@@ -115,10 +115,13 @@ header.app-header {
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-ghost { background: transparent; color: var(--ft-text-muted); border-color: var(--ft-border); }
 .btn-ghost:hover { background: var(--ft-surface-2); color: var(--ft-text); border-color: var(--ft-border-strong); }
-.btn-success { background: var(--ft-success); }
-.btn-danger { background: var(--ft-danger); }
-.btn-danger:hover { background: var(--ft-danger-hover); }
-.btn-warning { background: var(--ft-warning); }
+/* semantic actions: outlined like ghost, theme-colored; fill on hover */
+.btn-success { background: transparent; color: var(--ft-success); border-color: var(--ft-success); }
+.btn-success:hover { background: var(--ft-success); color: var(--ft-text-on-accent); }
+.btn-danger { background: transparent; color: var(--ft-danger); border-color: var(--ft-danger); }
+.btn-danger:hover { background: var(--ft-danger-hover); color: var(--ft-text-on-accent); }
+.btn-warning { background: transparent; color: var(--ft-warning); border-color: var(--ft-warning); }
+.btn-warning:hover { background: var(--ft-warning); color: var(--ft-text-on-accent); }
 .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
 .btn-icon { padding: 6px 9px; }
 
@@ -157,12 +160,22 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 .badge-off { background: var(--ft-surface-3); color: var(--ft-text-faint); }
 .badge-live { background: var(--ft-accent-soft); color: var(--ft-info); }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.dot-on { background: var(--ft-success); }
+.dot-on {
+  background: var(--ft-success);
+  box-shadow: 0 0 6px var(--ft-success), 0 0 2px var(--ft-success);
+  animation: ft-pulse 2s ease-in-out infinite;
+}
 .dot-off { background: var(--ft-text-faint); }
+@keyframes ft-pulse {
+  0%, 100% { box-shadow: 0 0 5px var(--ft-success), 0 0 2px var(--ft-success); }
+  50% { box-shadow: 0 0 10px var(--ft-success), 0 0 4px var(--ft-success); }
+}
+@media (prefers-reduced-motion: reduce) { .dot-on { animation: none; } }
 
 /* ── modal ── */
 .modal-overlay {
   position: fixed; inset: 0; background: var(--ft-overlay);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
   display: grid; place-items: center; z-index: 200; padding: 20px;
 }
 .modal {
@@ -227,6 +240,34 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 .log .tok-id { color: var(--ft-log-id); }
 .log .tok-dest { color: var(--ft-log-dest); }
 .log .tok-b { font-weight: 600; }
+.sk-line {
+  height: 10px; border-radius: 4px; margin: 7px 0; opacity: 0.35;
+  background: linear-gradient(90deg, transparent, var(--ft-log-base), transparent);
+  background-size: 200% 100%; animation: ft-shimmer 1.3s linear infinite;
+}
+@keyframes ft-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── glass switch toggle ── */
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.switch > input { position: absolute; opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: relative; width: 40px; height: 22px; border-radius: 999px; flex-shrink: 0;
+  background: var(--ft-glass-bg-2); border: 1px solid var(--ft-glass-border);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 0 var(--ft-glass-highlight); transition: background 0.2s, border-color 0.2s;
+}
+.switch-thumb {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--ft-text-muted); box-shadow: 0 1px 3px var(--ft-shadow);
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.switch > input:checked + .switch-track { background: var(--ft-accent-soft); border-color: var(--ft-accent); }
+.switch > input:checked + .switch-track .switch-thumb {
+  transform: translateX(18px); background: var(--ft-accent); box-shadow: 0 0 8px var(--ft-accent);
+}
+.switch > input:focus-visible + .switch-track { outline: 2px solid var(--ft-accent); outline-offset: 2px; }
+.switch-disabled { opacity: 0.5; cursor: not-allowed; }
+.switch-label { font-size: 0.85rem; color: var(--ft-text); }
 
 /* ── connected-clients popover ── */
 .peers { position: relative; cursor: default; }
