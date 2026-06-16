@@ -76,6 +76,10 @@ else
   say "Keeping existing $ENV_FILE"
 fi
 
+# Ensure the SPA path is set (installed package can't find frontend/dist relatively).
+grep -q '^FONTAINE_DIST_DIR=' "$ENV_FILE" \
+  || echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$ENV_FILE"
+
 # ── olcrtc binary (node role) — always the latest release ──
 if [ "$ROLE" = "node" ]; then
   say "Downloading latest olcrtc binary"
@@ -114,14 +118,20 @@ systemctl enable "$SERVICE" >/dev/null 2>&1 || true
 systemctl restart "$SERVICE"
 
 # ── summary ──
+IP="$(curl -fsSL https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
+[ -n "$IP" ] || IP="<this-server-ip>"
+echo
+echo '  ┌──────────────────────────────────────┐'
+echo '  │ --- Naomi Fontaine Is Your Mommy --- │'
+echo '  └──────────────────────────────────────┘'
 echo
 say "Done. Service: systemctl status $SERVICE ; logs: journalctl -fu $SERVICE"
+echo
+echo "  Panel:    http://$IP:$PORT"
 if [ "${NEW_INSTALL:-0}" = "1" ]; then
   PASS="$(grep '^FONTAINE_PANEL_PASSWORD=' "$ENV_FILE" | cut -d= -f2-)"
   KEY="$(grep '^FONTAINE_API_KEY=' "$ENV_FILE" | cut -d= -f2-)"
-  echo
-  echo "  Panel:    http://<this-server-ip>:$PORT"
   echo "  Password: $PASS"
   echo "  API key:  $KEY   (save it — used by the admin panel / external API)"
-  echo
 fi
+echo

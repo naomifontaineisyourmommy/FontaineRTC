@@ -32,6 +32,10 @@ print("   olcrtc release:", download_binary(Path("$INSTALL_DIR/$BINARY_NAME")))
 PY
 fi
 
+# Ensure the SPA path is set (older installs predate this).
+grep -q '^FONTAINE_DIST_DIR=' "$INSTALL_DIR/.env" 2>/dev/null \
+  || echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$INSTALL_DIR/.env"
+
 say "Restarting service"
 systemctl restart "$SERVICE"
 say "Updated. Logs: journalctl -fu $SERVICE"
