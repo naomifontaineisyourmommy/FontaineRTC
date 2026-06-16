@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
         run: |
           npm --prefix frontend ci
           npm --prefix frontend run build
-      - name: Commit rebuilt dist (main only)
+      - name: Commit rebuilt dist (master only)
         if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"

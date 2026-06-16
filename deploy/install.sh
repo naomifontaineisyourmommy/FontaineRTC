@@ -4,8 +4,8 @@
 # systemd service. Safe to re-run (acts as an update, preserving secrets/data).
 #
 # Usage (one-liner):
-#   sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/main/deploy/install.sh)
-#   sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/main/deploy/install.sh)
+#   sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
+#   sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
 #
 # Optional env:
 #   FONTAINE_PORT=8080            panel port

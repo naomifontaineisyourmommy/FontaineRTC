@@ -20,10 +20,10 @@
 
 ```sh
 # Нода (запускает olcrtc на этом VPS)
-sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/main/deploy/install.sh)
+sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
 
 # Admin-панель (мониторинг и управление нодами)
-sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/main/deploy/install.sh)
+sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh)
 ```
 
 После установки выводятся **адрес панели**, **пароль** и **API-ключ** (один раз).
