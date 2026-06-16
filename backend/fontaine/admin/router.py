@@ -148,6 +148,17 @@ async def api_v1(request: Request) -> Response:
 
 
 # ── settings ──────────────────────────────────────────────────────────────────
+@router.post("/api/update")
+async def self_update(request: Request) -> Response:
+    if not _authed(request):
+        return _unauth()
+    from .. import updater
+    ok, msg = updater.self_update(updater.install_dir(), fetch_binary=False)
+    if ok:
+        updater.schedule_restart()
+    return _ok({"ok": ok, "message": msg})
+
+
 @router.post("/api/poll-interval")
 async def set_poll_interval(request: Request) -> Response:
     if not _authed(request):
@@ -361,13 +372,11 @@ async def update_server(request: Request) -> Response:
         url = d.get("url", "").strip()
     except Exception:
         return _ok({"error": "Invalid request"}, 400)
-    if not url:
-        return _ok({"error": "Git URL is required"}, 400)
     srv = mgr.db.server_by_id(sid)
     if not srv:
         return _ok({"error": "Server not found"}, 404)
     try:
-        res = mgr.vps_call(srv["ip"], srv["api_key"], {"action": "update_panel", "url": url})
+        res = mgr.vps_call(srv["ip"], srv["api_key"], {"action": "update_panel", "url": url}, timeout=120)
     except Exception as e:
         return _ok({"error": str(e)}, 502)
     return _ok({"ok": True, "name": srv["name"], "message": res.get("message", "")})
@@ -381,8 +390,6 @@ async def update_all_servers(request: Request) -> Response:
         url = (await _json_body(request)).get("url", "").strip()
     except Exception:
         return _ok({"error": "Invalid request"}, 400)
-    if not url:
-        return _ok({"error": "Git URL is required"}, 400)
     results = _mgr(request).update_all_servers(url)
     return _ok({"ok": True, "count": len(results), "results": results})
 

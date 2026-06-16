@@ -9,14 +9,48 @@
   (бывший **OlcRTC-AdminVPS**).
 
 > [!CAUTION]
-> Проект в активной разработке (миграция по фазам). Сейчас готов **скелет +
-> общее ядро** — см. [docs/MIGRATION.md](docs/MIGRATION.md).
+> Проект в активной разработке. Бэкенд обеих ролей, фронтенд с темами и
+> установка/обновление/удаление готовы — см. [docs/MIGRATION.md](docs/MIGRATION.md).
+
+## Установка на сервер (Linux, root)
+
+Всё подтягивается из репозитория автоматически; бинарник `olcrtc` берётся свежий
+из релизов
+[OlcRTC-AdvancedInteractive](https://github.com/naomifontaineisyourmommy/OlcRTC-AdvancedInteractive/releases).
+
+```sh
+# Нода (запускает olcrtc на этом VPS)
+sudo FONTAINE_ROLE=node  bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/main/deploy/install.sh)
+
+# Admin-панель (мониторинг и управление нодами)
+sudo FONTAINE_ROLE=admin bash <(curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/main/deploy/install.sh)
+```
+
+После установки выводятся **адрес панели**, **пароль** и **API-ключ** (один раз).
+Admin за HTTPS: добавьте `ADMIN_DOMAIN=panel.example.com` (нужен nginx + сертификат
+Let's Encrypt) — установщик настроит reverse-proxy.
+
+**Обновление** (то же делает кнопка «↺ Обновить» в интерфейсе — подтягивает код из
+репо + свежий бинарник + перезапуск):
+
+```sh
+sudo bash /opt/fontaine/deploy/update.sh
+```
+
+**Удаление** (данные сохраняются; `--purge` — удалить всё):
+
+```sh
+sudo bash /opt/fontaine/deploy/uninstall.sh           # сохранить config/data
+sudo bash /opt/fontaine/deploy/uninstall.sh --purge   # удалить полностью
+```
+
+Управление сервисом: `systemctl status fontaine` · `journalctl -fu fontaine`.
 
 ## Стек
 
 - Backend: **FastAPI** (один пакет `fontaine`, роль выбирается через `FONTAINE_ROLE`)
 - Frontend: **React + Vite + TypeScript** (общий SPA для обеих ролей)
-- БД: **SQLite** (SQLAlchemy), деплой через **Docker** или `deploy/install.sh`
+- БД: **SQLite** (stdlib `sqlite3`); деплой — `deploy/install.sh` или **Docker**
 - Протокол node↔admin: совместим с оригиналами (Hash-CTR + HMAC-SHA256)
 
 Подробнее — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
@@ -32,10 +66,10 @@
 ## Структура
 
 ```
-backend/    FastAPI-приложение (fontaine: core / node / admin / db)
-frontend/   React SPA (Vite)
-deploy/     install.sh, systemd unit, nginx-пример
-docs/        ARCHITECTURE / PROTOCOL / MIGRATION
+backend/    FastAPI-приложение (fontaine: core / node / admin / updater)
+frontend/   React SPA (Vite); собранный dist закоммичен (сервер без Node)
+deploy/     install.sh / update.sh / uninstall.sh, systemd unit, nginx-пример
+docs/        ARCHITECTURE / PROTOCOL / THEMES / MIGRATION
 ```
 
 ## Быстрый старт (разработка)
@@ -69,5 +103,16 @@ docker compose up --build
 | 2    | Роль node (backend)              | ✅ |
 | 3    | Роль admin (backend)             | ✅ |
 | 4    | Frontend + темы                  | ✅ |
-| 5    | Деплой                           | ⏳ |
+| 5    | Деплой (install/update/uninstall) | ✅ |
 | 6    | Паритет и тесты                  | ⏳ |
+
+---
+
+## Благодарности
+
+Проект основан на панелях [tankionline2005](https://github.com/tankionline2005)
+— **OlcRTC-VPS** и **OlcRTC-AdminVPS**. Спасибо за предоставленный код, который
+послужил основой для FontaineRTC.
+
+Сам OlcRTC — проект [zarazaex](https://github.com/zarazaex69) /
+[openlibrecommunity](https://github.com/openlibrecommunity).

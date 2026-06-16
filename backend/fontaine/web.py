@@ -2,13 +2,17 @@
 client-side routing. Enabled from app.py once the frontend is built.
 """
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+_DIST = Path(
+    os.environ.get("FONTAINE_DIST_DIR")
+    or Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+)
 
 
 def mount_spa(app: FastAPI) -> None:

@@ -1,5 +1,5 @@
 [Unit]
-Description=FontaineRTC panel (%i)
+Description=FontaineRTC panel
 After=network.target
 
 [Service]

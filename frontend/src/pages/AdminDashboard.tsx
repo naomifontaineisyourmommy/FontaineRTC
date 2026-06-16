@@ -49,6 +49,14 @@ export function AdminDashboard() {
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("groups")}>⊞ Группы</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("jitsi")}>🌐 Jitsi-домены</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("tg")}>🔔 TG-алерты</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => {
+            if (confirm("Обновить все ноды из их репозиториев?"))
+              act(() => apiPost("/api/servers/update-all", {}), "Обновление нод запущено");
+          }}>↺ Обновить ноды</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => {
+            if (confirm("Обновить эту admin-панель и перезапустить сервис?"))
+              act(() => apiPost("/api/update"), "Обновление запущено, сервис перезапустится");
+          }}>↺ Обновить панель</button>
           {data && <PollInterval value={data.poll_interval} onSaved={refresh} />}
         </div>
       </div>
@@ -129,6 +137,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
     <Modal title={`${srv.name} · ${srv.country}`} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)}>✎ Изменить</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => onAction(() => apiPost("/api/servers/update", { server_id: srv.id }), "Обновление ноды запущено")}>↺ Обновить</button>
         <button className="btn btn-success btn-sm" onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
         <button className="btn btn-danger btn-sm" onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
         <button className="btn btn-warning btn-sm" onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>

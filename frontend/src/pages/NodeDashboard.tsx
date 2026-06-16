@@ -59,6 +59,10 @@ export function NodeDashboard() {
         </div>
         <div className="row" style={{ gap: 8 }}>
           <a className="btn btn-ghost btn-sm" href={sseUrl("/api/logs/download-all")}>⬇ Все логи</a>
+          <button className="btn btn-ghost btn-sm" onClick={() => {
+            if (!confirm("Обновить панель из репозитория и перезапустить сервис?")) return;
+            act(() => apiPost("/api/update"), "Обновление запущено, сервис перезапустится");
+          }}>↺ Обновить</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)}>⚙ Настройки</button>
         </div>
       </div>

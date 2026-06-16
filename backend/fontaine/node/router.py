@@ -127,6 +127,17 @@ async def save_config(request: Request) -> Response:
     return _ok({"ok": True})
 
 
+@router.post("/api/update")
+async def self_update(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    from .. import updater
+    ok, msg = updater.self_update(updater.install_dir(), fetch_binary=True)
+    if ok:
+        updater.schedule_restart()
+    return _ok({"ok": ok, "message": msg})
+
+
 @router.get("/api/genkey")
 async def genkey(request: Request) -> Response:
     if not _authed(request):
@@ -325,7 +336,11 @@ async def api_v1(request: Request) -> Response:
         mgr.cfg.set("jitsi_domains", normalized)
         return _enc(ak, {"ok": True})
     if action == "update_panel":
-        return _enc(ak, {"ok": False, "message": "update_panel not yet implemented"})
+        from .. import updater
+        ok, msg = updater.self_update(updater.install_dir(), fetch_binary=True)
+        if ok:
+            updater.schedule_restart()
+        return _enc(ak, {"ok": ok, "message": msg})
     return _enc(ak, {"error": "unknown action"}, 400)
 
 

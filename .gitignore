@@ -22,9 +22,10 @@ olcrtc-linux-amd64
 
 # Node / frontend
 node_modules/
-frontend/dist/
 *.tsbuildinfo
 *.local
+# NOTE: frontend/dist IS committed so the installer needs no Node on the server.
+# CI rebuilds it on every push; maintainers can also run `npm --prefix frontend run build`.
 
 # OS / editors
 .DS_Store

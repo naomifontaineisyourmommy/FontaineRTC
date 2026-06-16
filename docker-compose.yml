@@ -4,7 +4,9 @@
 
 services:
   admin:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       FONTAINE_ROLE: admin
       FONTAINE_PANEL_PORT: "8080"
@@ -15,7 +17,9 @@ services:
       - admin_data:/data
 
   node:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       FONTAINE_ROLE: node
       FONTAINE_PANEL_PORT: "8080"
