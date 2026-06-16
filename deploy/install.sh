@@ -91,6 +91,10 @@ print("   olcrtc release:", tag)
 PY
 fi
 
+# ── detect server IP (used for panel URL + push target) ──
+IP="$(curl -fsSL https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
+[ -n "$IP" ] || IP="<this-server-ip>"
+
 # ── optional nginx HTTPS for admin ──
 if [ "$ROLE" = "admin" ] && [ -n "${ADMIN_DOMAIN:-}" ] && command -v nginx >/dev/null 2>&1; then
   HTTPS_PORT="${ADMIN_HTTPS_PORT:-8443}"
@@ -110,6 +114,13 @@ if [ "$ROLE" = "admin" ] && [ -n "${ADMIN_DOMAIN:-}" ] && command -v nginx >/dev
   fi
 fi
 
+# Admin pushes are registered on nodes using this URL — default to HTTP when not
+# behind nginx, otherwise nodes never receive a push target (only fallback poll).
+if [ "$ROLE" = "admin" ]; then
+  grep -q '^FONTAINE_PANEL_URL=' "$ENV_FILE" \
+    || echo "FONTAINE_PANEL_URL=http://$IP:$PORT" >> "$ENV_FILE"
+fi
+
 # ── systemd service ──
 say "Installing systemd service"
 cp "$INSTALL_DIR/deploy/$SERVICE.service" "/etc/systemd/system/$SERVICE.service"
@@ -118,8 +129,6 @@ systemctl enable "$SERVICE" >/dev/null 2>&1 || true
 systemctl restart "$SERVICE"
 
 # ── summary ──
-IP="$(curl -fsSL https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
-[ -n "$IP" ] || IP="<this-server-ip>"
 echo
 echo '  ┌──────────────────────────────────────┐'
 echo '  │ --- Naomi Fontaine Is Your Mommy --- │'

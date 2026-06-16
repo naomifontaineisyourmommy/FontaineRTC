@@ -273,7 +273,9 @@ class NodeManager:
         with self.lock:
             self.users[uid] = inst.new_instance(uid, carrier, transport)
             self.save()
-            return dict(self.users[uid])
+            created = dict(self.users[uid])
+        self.notify_push()
+        return created
 
     def delete_user(self, uid: str) -> bool:
         with self.lock:

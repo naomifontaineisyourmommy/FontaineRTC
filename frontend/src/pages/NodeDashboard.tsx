@@ -140,24 +140,34 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
 }) {
   const [form, setForm] = useState<Instance>(inst);
   const toast = useToast();
+  const timer = useRef<number | null>(null);
   useEffect(() => { setForm(inst); }, [inst.id]); // reset when switching instance
 
-  const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const locked = inst.running;            // settings are read-only while running
   const domainList = domains.split("\n").map((d) => d.trim()).filter(Boolean);
   const transportOpts = compatTransports(form.carrier);
   const params = PARAM_FIELDS[form.transport] ?? [];
 
-  const save = async () => {
+  const persist = async (next: Instance) => {
     try {
       await apiPost(`/api/users/config/${inst.id}`, {
-        carrier: form.carrier, transport: form.transport, key: form.key,
-        custom_room_id: form.custom_room_id, jitsi_chosen_domain: form.jitsi_chosen_domain,
-        auto_restart: form.auto_restart, wb_token: form.wb_token,
-        max_session_duration: form.max_session_duration,
-        ...Object.fromEntries(params.map((p) => [p, form[p]])),
+        carrier: next.carrier, transport: next.transport, key: next.key,
+        custom_room_id: next.custom_room_id, jitsi_chosen_domain: next.jitsi_chosen_domain,
+        auto_restart: next.auto_restart, wb_token: next.wb_token,
+        max_session_duration: next.max_session_duration,
+        ...Object.fromEntries((PARAM_FIELDS[next.transport] ?? []).map((p) => [p, next[p]])),
       });
-      toast.push("Сохранено"); onRefresh();
+      onRefresh();
     } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
+  };
+
+  // auto-save: immediate for selects/checkbox, debounced for free-text fields
+  const commit = (patch: Partial<Instance>, debounce = false) => {
+    const next = { ...form, ...patch };
+    setForm(next);
+    if (timer.current) clearTimeout(timer.current);
+    if (debounce) timer.current = window.setTimeout(() => persist(next), 700);
+    else persist(next);
   };
 
   return (
@@ -185,23 +195,30 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
         <span>↑ {fmtBytes(inst.traffic_tx)}</span>
       </div>
 
+      <div className="faint" style={{ fontSize: ".78rem", marginBottom: 4 }}>
+        {locked
+          ? "🔒 Остановите инстанс, чтобы изменить настройки"
+          : "Изменения сохраняются автоматически"}
+      </div>
+
       <div className="field">
         <label>Сервис</label>
-        <select value={form.carrier} onChange={(e) => {
+        <select value={form.carrier} disabled={locked} onChange={(e) => {
           const c = e.target.value; const t = compatTransports(c);
-          set("carrier", c); if (!t.includes(form.transport)) set("transport", t[0]);
+          commit({ carrier: c, transport: t.includes(form.transport) ? form.transport : t[0] });
         }}>{CARRIERS.map((c) => <option key={c}>{c}</option>)}</select>
       </div>
       <div className="field">
         <label>Транспорт</label>
-        <select value={form.transport} onChange={(e) => set("transport", e.target.value)}>
+        <select value={form.transport} disabled={locked} onChange={(e) => commit({ transport: e.target.value })}>
           {transportOpts.map((t) => <option key={t}>{t}</option>)}
         </select>
       </div>
       {form.carrier === "jitsi" && domainList.length > 0 && (
         <div className="field">
           <label>Jitsi-домен (пусто = ручной Room ID)</label>
-          <select value={form.jitsi_chosen_domain} onChange={(e) => set("jitsi_chosen_domain", e.target.value)}>
+          <select value={form.jitsi_chosen_domain} disabled={locked}
+            onChange={(e) => commit({ jitsi_chosen_domain: e.target.value })}>
             <option value="">— ручной —</option>
             {domainList.map((d) => <option key={d}>{d}</option>)}
           </select>
@@ -209,30 +226,33 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
       )}
       <div className="field">
         <label>Room ID / URL</label>
-        <input value={form.custom_room_id} onChange={(e) => set("custom_room_id", e.target.value)}
+        <input value={form.custom_room_id} disabled={locked}
+          onChange={(e) => commit({ custom_room_id: e.target.value }, true)}
           placeholder={form.carrier === "telemost" ? "обязателен" : "авто, если пусто"} />
       </div>
       {form.carrier === "wbstream" && (
         <div className="field">
           <label>WB Token (owner-mode)</label>
-          <input value={form.wb_token} onChange={(e) => set("wb_token", e.target.value)} placeholder="bearer-токен" />
+          <input value={form.wb_token} disabled={locked}
+            onChange={(e) => commit({ wb_token: e.target.value }, true)} placeholder="bearer-токен" />
         </div>
       )}
       {params.map((p) => (
         <div className="field" key={p}>
           <label>{p}</label>
-          <input value={form[p] ?? ""} onChange={(e) => set(p, e.target.value)} />
+          <input value={form[p] ?? ""} disabled={locked}
+            onChange={(e) => commit({ [p]: e.target.value } as Partial<Instance>, true)} />
         </div>
       ))}
       <div className="field">
         <label>Макс. длительность сессии (напр. 6h)</label>
-        <input value={form.max_session_duration} onChange={(e) => set("max_session_duration", e.target.value)} />
+        <input value={form.max_session_duration} disabled={locked}
+          onChange={(e) => commit({ max_session_duration: e.target.value }, true)} />
       </div>
       <label className="row" style={{ gap: 8 }}>
-        <input type="checkbox" style={{ width: "auto" }} checked={form.auto_restart}
-          onChange={(e) => set("auto_restart", e.target.checked)} /> Автозапуск
+        <input type="checkbox" style={{ width: "auto" }} checked={form.auto_restart} disabled={locked}
+          onChange={(e) => commit({ auto_restart: e.target.checked })} /> Автозапуск
       </label>
-      <button className="btn" style={{ marginTop: 12 }} onClick={save}>Сохранить</button>
     </div>
   );
 }

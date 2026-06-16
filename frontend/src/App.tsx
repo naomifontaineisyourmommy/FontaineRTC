@@ -40,7 +40,7 @@ export default function App() {
     <>
       <header className="app-header">
         <div className="logo">
-          <span className="logo-icon">F</span> FontaineRTC
+          <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
           <span className="role-pill">{role}</span>
         </div>
         <div className="hdr-actions">

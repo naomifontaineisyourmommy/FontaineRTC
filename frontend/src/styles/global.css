@@ -1,15 +1,34 @@
 /* FontaineRTC global styles — every color references a theme token (--ft-*). */
 
+@font-face {
+  font-family: "Gucci";
+  src: url("/fonts/gucci.otf") format("opentype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "VK Sans Display";
+  src: url("/fonts/vksans.ttf") format("truetype");
+  font-display: swap;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-:root { color-scheme: dark; }
+:root {
+  color-scheme: dark;
+  --ft-font-body: "Gucci", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --ft-font-head: "VK Sans Display", "Segoe UI", system-ui, sans-serif;
+}
 
 body {
   background: var(--ft-bg);
   color: var(--ft-text);
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: var(--ft-font-body);
   min-height: 100vh;
   transition: background 0.2s, color 0.2s;
+}
+
+h1, h2, h3, h4, .logo, .modal-title, .section-title, .tile-name {
+  font-family: var(--ft-font-head);
 }
 
 a { color: var(--ft-accent); text-decoration: none; }
@@ -34,6 +53,10 @@ header.app-header {
   width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
   background: linear-gradient(135deg, var(--ft-accent), var(--ft-info));
   color: var(--ft-text-on-accent); font-size: 15px;
+}
+.logo-avatar {
+  width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
+  border: 1px solid var(--ft-border-strong);
 }
 .hdr-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .role-pill {
@@ -82,6 +105,7 @@ input, select, textarea {
   outline: none; font-family: inherit; width: 100%;
 }
 input:focus, select:focus, textarea:focus { border-color: var(--ft-accent); }
+input:disabled, select:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
 label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-bottom: 4px; }
 .field { margin-bottom: 12px; }
 

@@ -36,6 +36,13 @@ fi
 grep -q '^FONTAINE_DIST_DIR=' "$INSTALL_DIR/.env" 2>/dev/null \
   || echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$INSTALL_DIR/.env"
 
+# Ensure admin has a push URL so nodes receive a push target (else: only polling).
+if [ "$ROLE" = "admin" ] && ! grep -q '^FONTAINE_PANEL_URL=' "$INSTALL_DIR/.env" 2>/dev/null; then
+  IP="$(curl -fsSL https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
+  PORT="$(grep '^FONTAINE_PANEL_PORT=' "$INSTALL_DIR/.env" | cut -d= -f2-)"
+  [ -n "$IP" ] && echo "FONTAINE_PANEL_URL=http://$IP:${PORT:-8080}" >> "$INSTALL_DIR/.env"
+fi
+
 say "Restarting service"
 systemctl restart "$SERVICE"
 say "Updated. Logs: journalctl -fu $SERVICE"

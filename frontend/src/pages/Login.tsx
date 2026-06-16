@@ -24,7 +24,7 @@ export function Login({ onDone }: { onDone: () => void }) {
     <div className="login-wrap">
       <form className="card login-card" onSubmit={submit}>
         <div className="logo" style={{ marginBottom: 16 }}>
-          <span className="logo-icon">F</span> FontaineRTC
+          <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
         </div>
         <div className="field">
           <label>Пароль панели</label>

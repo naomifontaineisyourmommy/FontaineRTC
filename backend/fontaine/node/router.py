@@ -237,6 +237,7 @@ async def user_config(uid: str, request: Request) -> Response:
         if "auto_restart" in data:
             u["auto_restart"] = bool(data["auto_restart"])
         mgr.save()
+    mgr.notify_push()
     return _ok({"ok": True})
 
 
@@ -296,6 +297,7 @@ async def api_v1(request: Request) -> Response:
             if "auto_restart" in payload:
                 u["auto_restart"] = bool(payload["auto_restart"])
             mgr.save()
+        mgr.notify_push()
         return _enc(ak, {"ok": True})
     if action == "create_user":
         carrier = payload.get("carrier", "jitsi")
