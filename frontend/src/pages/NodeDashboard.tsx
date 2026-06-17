@@ -46,17 +46,19 @@ export function NodeDashboard() {
   };
 
   const selected = users.find((u) => u.id === sel);
+  const anyStopped = users.some((u) => !u.running);
+  const anyRunning = users.some((u) => u.running);
 
   return (
     <>
       <div className="row-between" style={{ padding: "14px 22px 0", flexWrap: "wrap", gap: 8 }}>
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           <button className="btn" onClick={() => setShowAdd(true)}>＋ Инстанс</button>
-          <button className="btn btn-success btn-sm" title="Запустить все"
+          <button className="btn btn-success btn-sm" title="Запустить все" disabled={!anyStopped}
             onClick={() => act(() => apiPost("/api/users/start-all"), "Запуск всех")}>▶</button>
-          <button className="btn btn-danger btn-sm" title="Остановить все"
+          <button className="btn btn-danger btn-sm" title="Остановить все" disabled={!anyRunning}
             onClick={() => act(() => apiPost("/api/users/stop-all"), "Остановка всех")}>■</button>
-          <button className="btn btn-warning btn-sm" title="Перезапустить все"
+          <button className="btn btn-warning btn-sm" title="Перезапустить все" disabled={!anyRunning}
             onClick={() => act(() => apiPost("/api/users/restart-all"), "Перезапуск всех")}>↺</button>
         </div>
         <div className="row" style={{ gap: 8 }}>
@@ -184,12 +186,12 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
         {!inst.running
           ? <button className="btn btn-success btn-sm" onClick={() => onAction(() => apiPost(`/api/users/start/${inst.id}`), "Запущен")}>▶ Запустить</button>
           : <button className="btn btn-danger btn-sm" onClick={() => onAction(() => apiPost(`/api/users/stop/${inst.id}`), "Остановлен")}>■ Остановить</button>}
-        <button className="btn btn-ghost btn-sm" onClick={() => { copy(inst.uri); toast.push("URI скопирован"); }}>⧉ URI</button>
         <button className="btn btn-danger btn-sm" onClick={() => {
           if (confirm("Удалить инстанс?")) onAction(() => apiPost(`/api/users/delete/${inst.id}`), "Удалён");
         }}>🗑</button>
       </div>
-      <div className="uri" style={{ marginBottom: 10 }}>{inst.uri}</div>
+      <div className="uri uri-copy" title="Нажмите, чтобы скопировать" style={{ marginBottom: 10 }}
+        onClick={() => { copy(inst.uri); toast.push("URI скопирован"); }}>{inst.uri}</div>
       <div className="tile-meta" style={{ marginBottom: 10 }}>
         <span>⏱ {fmtUptime(inst.uptime)}</span>
         <Peers count={inst.peers_count} devices={inst.peers_devices} />

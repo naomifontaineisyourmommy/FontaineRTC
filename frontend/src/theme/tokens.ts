@@ -56,6 +56,7 @@ export const TOKENS: ThemeToken[] = [
   { key: "--ft-log-bg", group: "Components", label: "Log background", description: "Live log / terminal area", fallback: "#07070b" },
   { key: "--ft-log-text", group: "Components", label: "Log text", description: "Live log text", fallback: "#c8d0d8" },
   { key: "--ft-scrollbar", group: "Components", label: "Scrollbar", description: "Custom scrollbar thumb", fallback: "#2a2a3a" },
+  { key: "--ft-search-bg", group: "Components", label: "Search field", description: "Background of the admin search input", fallback: "#2c2d38" },
 
   // Log highlighting
   { key: "--ft-log-base", group: "Logs", label: "Log base line", description: "Default/info log line", fallback: "#9ca3af" },

@@ -151,6 +151,7 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus { border-color: var(--ft-accent); }
 input:disabled, select:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+.search-input { background: var(--ft-search-bg); }
 label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-bottom: 4px; }
 .field { margin-bottom: 12px; }
 
@@ -291,6 +292,8 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
   border: 1px solid var(--ft-border); border-radius: 7px; padding: 6px 8px;
   word-break: break-all; color: var(--ft-text-muted);
 }
+.uri-copy { cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.uri-copy:hover { border-color: var(--ft-accent); color: var(--ft-text); }
 .section-title { padding: 16px 22px 4px; font-size: 0.78rem; color: var(--ft-text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ── toasts ── */

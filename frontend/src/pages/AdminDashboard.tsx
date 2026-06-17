@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api/client";
 import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
+import { COUNTRIES, isKnownCountry } from "../lib/countries";
 
 interface VUser {
   client_id: string; uri: string; running: boolean; uri_live: boolean;
@@ -46,7 +47,7 @@ export function AdminDashboard() {
   return (
     <>
       <div className="row-between" style={{ padding: "14px 22px 0", flexWrap: "wrap", gap: 8 }}>
-        <input style={{ maxWidth: 280 }} placeholder="Поиск серверов / групп…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="search-input" style={{ maxWidth: 280 }} placeholder="Поиск серверов / групп…" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           <button className="btn" onClick={() => {
             if (groups.length === 0) toast.push("Сначала создайте группу", false);
@@ -123,15 +124,17 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
   const [showAdd, setShowAdd] = useState(false);
   const toast = useToast();
   const node = (action: string, body: object) => apiPost(`/api/node/${action}`, { server_id: srv.id, ...body });
+  const anyStopped = srv.users.some((u) => !u.running);
+  const anyRunning = srv.users.some((u) => u.running);
 
   return (
     <Modal title={`${srv.name} · ${srv.country}`} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)}>✎ Изменить</button>
         <button className="btn btn-ghost btn-sm" onClick={() => onAction(() => apiPost("/api/servers/update", { server_id: srv.id }), "Обновление ноды запущено")}>↺ Обновить</button>
-        <button className="btn btn-success btn-sm" onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
-        <button className="btn btn-danger btn-sm" onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
-        <button className="btn btn-warning btn-sm" onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>
+        <button className="btn btn-success btn-sm" disabled={!anyStopped} onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
+        <button className="btn btn-danger btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
+        <button className="btn btn-warning btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>
       </>}>
       <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <span className={`badge ${srv.online ? "badge-on" : "badge-off"}`}>{srv.online ? "online" : "offline"}</span>
@@ -149,11 +152,13 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
             </span>
             <span className="row" style={{ gap: 6 }}>
               {u.uri_live && <span className="badge badge-live">live</span>}
+              {u.running && (
+                <button className="btn btn-ghost btn-sm" onClick={() => { copy(u.uri); toast.push("URI скопирован"); }}>URI</button>
+              )}
               {!u.running
                 ? <button className="btn btn-success btn-sm" onClick={() => onAction(() => node("start-user", { id: u.client_id }), "Запущен")}>▶</button>
                 : <button className="btn btn-danger btn-sm" onClick={() => onAction(() => node("stop-user", { id: u.client_id }), "Остановлен")}>■</button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setEditInst(u.client_id)}>✎</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => { copy(u.uri); toast.push("URI скопирован"); }}>⧉</button>
               <button className="btn btn-danger btn-sm" onClick={() => {
                 if (confirm("Удалить инстанс?")) onAction(() => node("delete-user", { id: u.client_id }), "Удалён");
               }}>🗑</button>
@@ -190,6 +195,10 @@ function ServerFormModal({ groups, server, onClose, onSaved }: {
   const toast = useToast();
   const set = (k: string, v: any) => setF((s) => ({ ...s, [k]: v }));
   const save = async () => {
+    if (!isKnownCountry(f.country)) {
+      toast.push("Выберите страну из списка", false);
+      return;
+    }
     try {
       if (server) await apiPost("/api/servers/edit", { server_id: server.id, ...f });
       else await apiPost("/api/servers/add", f);
@@ -211,7 +220,12 @@ function ServerFormModal({ groups, server, onClose, onSaved }: {
         <input value={f.ip} onChange={(e) => set("ip", e.target.value)} placeholder="http://50.114.115.100:8080" /></div>
       <div className="field"><label>API-ключ {server && "(пусто = не менять)"}</label>
         <input value={f.api_key} onChange={(e) => set("api_key", e.target.value)} placeholder="64 hex" /></div>
-      <div className="field"><label>Страна</label><input value={f.country} onChange={(e) => set("country", e.target.value)} /></div>
+      <div className="field"><label>Страна</label>
+        <input list="ft-countries" value={f.country} onChange={(e) => set("country", e.target.value)}
+          placeholder="Начните вводить…" />
+        <datalist id="ft-countries">
+          {COUNTRIES.map((c) => <option key={c} value={c} />)}
+        </datalist></div>
       <div className="field"><label>Название</label><input value={f.name} onChange={(e) => set("name", e.target.value)} /></div>
       <div className="field"><label>Группа</label>
         <select value={f.group_id} onChange={(e) => set("group_id", parseInt(e.target.value))}>
