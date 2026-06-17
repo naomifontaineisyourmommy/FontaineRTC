@@ -43,6 +43,12 @@ if [ "$ROLE" = "admin" ] && ! grep -q '^FONTAINE_PANEL_URL=' "$INSTALL_DIR/.env"
   [ -n "$IP" ] && echo "FONTAINE_PANEL_URL=http://$IP:${PORT:-8080}" >> "$INSTALL_DIR/.env"
 fi
 
+# Refresh the systemd unit so unit-level tweaks (timeouts, etc.) propagate.
+if [ -f "$INSTALL_DIR/deploy/$SERVICE.service" ]; then
+  cp "$INSTALL_DIR/deploy/$SERVICE.service" "/etc/systemd/system/$SERVICE.service"
+  systemctl daemon-reload
+fi
+
 say "Restarting service"
 systemctl restart "$SERVICE"
 say "Updated. Logs: journalctl -fu $SERVICE"

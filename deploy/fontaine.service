@@ -9,6 +9,8 @@ EnvironmentFile=/opt/fontaine/.env
 ExecStart=/opt/fontaine/.venv/bin/python -m fontaine
 Restart=always
 RestartSec=3
+# Don't wait the default 90s on stop — SSE streams can hold connections open.
+TimeoutStopSec=12
 
 [Install]
 WantedBy=multi-user.target
