@@ -78,26 +78,69 @@ def schedule_restart(delay: float = 2.0) -> None:
     threading.Timer(delay, _do).start()
 
 
-def self_update(install_dir: Path, fetch_binary: bool = True) -> tuple[bool, str]:
-    """git pull + reinstall backend + (optionally) refresh binary. Caller restarts."""
-    steps: list[str] = []
+def self_update(install_dir: Path, fetch_binary: bool = True, progress=None) -> tuple[bool, str]:
+    """git pull + reinstall backend + (optionally) refresh binary. Caller restarts.
+    `progress(index, step)` is called as it advances (for the UI overlay)."""
+    def p(i: int, s: str) -> None:
+        if progress:
+            progress(i, s)
+
+    p(1, "Обновление кода…")
     ok, out = _run(["git", "pull", "--ff-only"], cwd=install_dir)
-    steps.append(f"git pull: {out or 'ok'}")
     if not ok:
-        return False, " | ".join(steps)
+        return False, f"git pull: {out}"
 
     pip = install_dir / ".venv" / "bin" / "pip"
     if pip.exists():
+        p(2, "Зависимости…")
         ok, out = _run([str(pip), "install", "-q", str(install_dir / "backend")])
-        steps.append(f"pip: {'ok' if ok else out}")
         if not ok:
-            return False, " | ".join(steps)
+            return False, f"pip: {out}"
 
     if fetch_binary:
+        p(3, "Бинарник…")
         try:
-            tag = download_binary(install_dir / BINARY_ASSET)
-            steps.append(f"binary: {tag}")
+            download_binary(install_dir / BINARY_ASSET)
         except Exception as e:
-            steps.append(f"binary fetch failed: {e}")
+            # non-fatal: a stale binary is better than a failed update
+            pass
 
-    return True, " | ".join(steps)
+    return True, "ok"
+
+
+# ── async update with progress (drives the UI overlay) ──────────────────────────
+_UPDATE_TOTAL = 4
+_status: dict = {"updating": False, "step": "", "index": 0, "total": _UPDATE_TOTAL, "error": ""}
+_status_lock = threading.Lock()
+
+
+def update_status() -> dict:
+    with _status_lock:
+        return dict(_status)
+
+
+def _set_status(**kw) -> None:
+    with _status_lock:
+        _status.update(kw)
+
+
+def start_update(install_dir: Path, fetch_binary: bool = True) -> tuple[bool, str]:
+    """Begin an update in the background. Returns immediately so the UI can poll
+    update_status(). On success the service is restarted (systemd brings it back)."""
+    with _status_lock:
+        if _status["updating"]:
+            return False, "update already in progress"
+        _status.update(updating=True, step="Подключение…", index=0,
+                       total=_UPDATE_TOTAL, error="")
+
+    def worker():
+        ok, msg = self_update(install_dir, fetch_binary,
+                              progress=lambda i, s: _set_status(index=i, step=s))
+        if ok:
+            _set_status(index=_UPDATE_TOTAL, step="Перезапуск…")
+            schedule_restart(1.5)
+        else:
+            _set_status(updating=False, step="", error=msg)
+
+    threading.Thread(target=worker, daemon=True).start()
+    return True, "update started"

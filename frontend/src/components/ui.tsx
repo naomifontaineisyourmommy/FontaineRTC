@@ -62,6 +62,39 @@ export function useToast(): ToastCtx {
   return ctx;
 }
 
+/** Full-screen glass overlay shown while the panel is updating. Blocks all input. */
+export function UpdateOverlay({
+  step, index, total, error, onClose,
+}: {
+  step: string;
+  index: number;
+  total: number;
+  error?: string;
+  onClose?: () => void;
+}) {
+  const pct = error ? 100 : Math.min(100, Math.round((index / Math.max(1, total)) * 100));
+  return createPortal(
+    <div className="update-overlay">
+      <div className="update-box">
+        <div className="update-title">Обновление</div>
+        {error ? (
+          <>
+            <div className="update-error">{error}</div>
+            <button className="btn" style={{ marginTop: 16 }}
+              onClick={() => (onClose ? onClose() : window.location.reload())}>Закрыть</button>
+          </>
+        ) : (
+          <>
+            <div className="update-step">{step || "Подготовка…"}</div>
+            <div className="update-bar"><div className="update-bar-fill" style={{ width: `${pct}%` }} /></div>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /** Liquid-glass switch toggle (drop-in replacement for a checkbox). */
 export function Switch({
   checked, onChange, label, disabled,

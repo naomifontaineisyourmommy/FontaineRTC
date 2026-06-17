@@ -154,10 +154,14 @@ async def self_update(request: Request) -> Response:
     if not _authed(request):
         return _unauth()
     from .. import updater
-    ok, msg = updater.self_update(updater.install_dir(), fetch_binary=False)
-    if ok:
-        updater.schedule_restart()
+    ok, msg = updater.start_update(updater.install_dir(), fetch_binary=False)
     return _ok({"ok": ok, "message": msg})
+
+
+@router.get("/api/updating")
+async def updating(request: Request) -> Response:
+    from .. import updater
+    return _ok(updater.update_status())
 
 
 @router.post("/api/poll-interval")

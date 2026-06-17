@@ -311,5 +311,29 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 .login-wrap { min-height: 100vh; display: grid; place-items: center; }
 .login-card { width: 100%; max-width: 360px; }
 
+/* ── update overlay ── */
+.update-overlay {
+  position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+  background: var(--ft-glass-bg);
+  -webkit-backdrop-filter: blur(var(--ft-glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--ft-glass-blur)) saturate(140%);
+}
+.update-box { text-align: center; padding: 28px 36px; min-width: 280px; }
+.update-title {
+  font-family: var(--ft-font-head); font-size: 1.7rem; font-weight: 700; margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--ft-accent), var(--ft-info));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.update-step { color: var(--ft-text-muted); font-size: 0.9rem; margin-bottom: 16px; }
+.update-bar {
+  width: 320px; max-width: 70vw; height: 8px; border-radius: 999px; overflow: hidden; margin: 0 auto;
+  background: var(--ft-surface-3); border: 1px solid var(--ft-glass-border);
+}
+.update-bar-fill {
+  height: 100%; border-radius: 999px; transition: width 0.4s ease;
+  background: linear-gradient(135deg, var(--ft-accent), var(--ft-info));
+}
+.update-error { color: var(--ft-danger); font-size: 0.85rem; max-width: 360px; }
+
 /* ── empty state ── */
 .empty { text-align: center; color: var(--ft-text-faint); padding: 48px 22px; }
