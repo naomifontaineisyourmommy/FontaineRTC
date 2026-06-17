@@ -151,9 +151,9 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
               {u.carrier}/{u.transport} · {u.client_id.slice(0, 6)}
             </span>
             <span className="row" style={{ gap: 6 }}>
-              {u.uri_live && <span className="badge badge-live">live</span>}
-              {u.running && (
-                <button className="btn btn-ghost btn-sm" onClick={() => { copy(u.uri); toast.push("URI скопирован"); }}>URI</button>
+              {u.uri_live && (
+                <span className="badge badge-live badge-copy" title="Нажмите, чтобы скопировать URI"
+                  onClick={() => { copy(u.uri); toast.push("URI скопирован"); }}>◆ URI live</span>
               )}
               {!u.running
                 ? <button className="btn btn-success btn-sm" onClick={() => onAction(() => node("start-user", { id: u.client_id }), "Запущен")}>▶</button>

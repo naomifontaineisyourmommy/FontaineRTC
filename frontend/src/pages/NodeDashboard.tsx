@@ -180,7 +180,10 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
         <span className={`badge ${inst.running ? "badge-on" : "badge-off"}`}>
           {inst.running ? "● Работает" : "○ Остановлен"}
         </span>
-        {inst.uri_live && <span className="badge badge-live">◆ URI live</span>}
+        {inst.uri_live && (
+          <span className="badge badge-live badge-copy" title="Нажмите, чтобы скопировать URI"
+            onClick={() => { copy(inst.uri); toast.push("URI скопирован"); }}>◆ URI live</span>
+        )}
       </div>
       <div className="row" style={{ gap: 6, margin: "8px 0" }}>
         {!inst.running

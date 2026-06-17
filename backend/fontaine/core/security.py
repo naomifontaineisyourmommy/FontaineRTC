@@ -2,10 +2,11 @@
 
 - Password hashing: PBKDF2-HMAC-SHA256, 200_000 iterations (as in OlcRTC-AdminVPS).
 - In-memory login rate limiting: max 5 failures / 5 minutes per IP.
-- In-memory session tokens.
+- Stateless signed session tokens (survive restarts; no server-side storage).
 """
 
 import hashlib
+import hmac
 import secrets
 import time
 
@@ -17,8 +18,9 @@ _LOGIN_WINDOW = 300          # seconds
 _LOGIN_MAX_FAILS = 5
 _fails: dict[str, list[float]] = {}
 
-# --- sessions ---
-_sessions: dict[str, float] = {}   # token -> created_at
+# --- sessions (stateless: token = "issued.nonce.hmac") ---
+_SESSION_MAX_AGE = 30 * 24 * 3600   # 30 days
+_session_secret: bytes = b""
 
 
 def hash_password(pw: str) -> str:
@@ -61,15 +63,32 @@ def login_reset(ip: str) -> None:
 
 # --- sessions ---
 
+def set_session_secret(secret: str) -> None:
+    """Set the HMAC key for signing session tokens (the panel's api_key).
+    Stable across restarts, so issued tokens stay valid after update/restart."""
+    global _session_secret
+    _session_secret = (secret or "").encode()
+
+
+def _sign(msg: str) -> str:
+    return hmac.new(_session_secret, msg.encode(), hashlib.sha256).hexdigest()[:32]
+
+
 def new_session() -> str:
-    token = secrets.token_urlsafe(32)
-    _sessions[token] = time.time()
-    return token
+    issued = int(time.time())
+    nonce = secrets.token_hex(8)
+    msg = f"{issued}.{nonce}"
+    return f"{msg}.{_sign(msg)}"
 
 
 def valid_session(token: str) -> bool:
-    return token in _sessions
-
-
-def drop_session(token: str) -> None:
-    _sessions.pop(token, None)
+    if not _session_secret or not token:
+        return False
+    try:
+        issued_s, nonce, sig = token.split(".")
+        issued = int(issued_s)
+    except (ValueError, AttributeError):
+        return False
+    if time.time() - issued > _SESSION_MAX_AGE:
+        return False
+    return secrets.compare_digest(sig, _sign(f"{issued}.{nonce}"))

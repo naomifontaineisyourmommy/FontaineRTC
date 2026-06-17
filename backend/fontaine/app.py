@@ -22,6 +22,8 @@ async def _lifespan(app: FastAPI):
         mgr = NodeManager(settings)
         push.register(mgr)
         app.state.manager = mgr
+        from .core import security
+        security.set_session_secret(mgr.cfg.get("api_key", ""))
 
         stop = threading.Event()
         app.state.worker_stop = stop
@@ -46,6 +48,8 @@ async def _lifespan(app: FastAPI):
 
         mgr = AdminManager(settings)
         app.state.manager = mgr
+        from .core import security
+        security.set_session_secret(mgr.cfg.get("api_key", ""))
 
         stop = threading.Event()
         app.state.worker_stop = stop
