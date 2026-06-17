@@ -63,9 +63,13 @@ export function NodeDashboard() {
         </div>
         <div className="row" style={{ gap: 8 }}>
           <a className="btn btn-ghost btn-sm" href={sseUrl("/api/logs/download-all")}>⬇ Все логи</a>
-          <button className="btn btn-ghost btn-sm" onClick={() => {
+          <button className="btn btn-ghost btn-sm" onClick={async () => {
             if (!confirm("Обновить панель из репозитория и перезапустить сервис?")) return;
-            act(() => apiPost("/api/update"), "Обновление запущено, сервис перезапустится");
+            try {
+              const r = await apiPost("/api/update");
+              toast.push(r.up_to_date ? "Последняя версия уже установлена"
+                : "Обновление запущено, сервис перезапустится");
+            } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
           }}>↺ Обновить</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)}>⚙ Настройки</button>
         </div>

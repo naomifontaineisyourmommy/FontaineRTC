@@ -154,14 +154,22 @@ async def self_update(request: Request) -> Response:
     if not _authed(request):
         return _unauth()
     from .. import updater
+    if updater.is_up_to_date():
+        return _ok({"ok": True, "up_to_date": True, "message": "Последняя версия уже установлена"})
     ok, msg = updater.start_update(updater.install_dir(), fetch_binary=False)
-    return _ok({"ok": ok, "message": msg})
+    return _ok({"ok": ok, "up_to_date": False, "message": msg})
 
 
 @router.get("/api/updating")
 async def updating(request: Request) -> Response:
     from .. import updater
     return _ok(updater.update_status())
+
+
+@router.get("/api/version")
+async def version(request: Request) -> Response:
+    from .. import updater
+    return _ok(updater.version_info())
 
 
 @router.post("/api/poll-interval")
@@ -384,7 +392,8 @@ async def update_server(request: Request) -> Response:
         res = mgr.vps_call(srv["ip"], srv["api_key"], {"action": "update_panel", "url": url}, timeout=120)
     except Exception as e:
         return _ok({"error": str(e)}, 502)
-    return _ok({"ok": True, "name": srv["name"], "message": res.get("message", "")})
+    return _ok({"ok": True, "name": srv["name"], "message": res.get("message", ""),
+                "up_to_date": bool(res.get("up_to_date"))})
 
 
 @router.post("/api/servers/update-all")

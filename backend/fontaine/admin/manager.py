@@ -238,7 +238,9 @@ class AdminManager:
             try:
                 res = self.vps_call(srv["ip"], srv["api_key"],
                                     {"action": "update_panel", "url": url}, timeout=120)
-                return {"name": srv["name"], "ok": True, "message": res.get("message", "")}
+                return {"name": srv["name"], "ok": True,
+                        "up_to_date": bool(res.get("up_to_date")),
+                        "message": res.get("message", "")}
             except Exception as e:
                 return {"name": srv["name"], "ok": False, "error": str(e)}
 

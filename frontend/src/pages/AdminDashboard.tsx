@@ -56,13 +56,23 @@ export function AdminDashboard() {
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("groups")}>⊞ Группы</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("jitsi")}>Jitsi-домены</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("tg")}>TG-алерты</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => {
-            if (confirm("Обновить все ноды из их репозиториев?"))
-              act(() => apiPost("/api/servers/update-all", {}), "Обновление нод запущено");
+          <button className="btn btn-ghost btn-sm" onClick={async () => {
+            if (!confirm("Обновить все ноды из их репозиториев?")) return;
+            try {
+              const r = await apiPost("/api/servers/update-all", {});
+              const res = r.results || [];
+              const started = res.filter((x: any) => x.ok && !x.up_to_date).length;
+              const upToDate = res.filter((x: any) => x.up_to_date).length;
+              toast.push(`Обновление: запущено ${started}, уже актуальны ${upToDate}`);
+            } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
           }}>↺ Обновить ноды</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => {
-            if (confirm("Обновить эту admin-панель и перезапустить сервис?"))
-              act(() => apiPost("/api/update"), "Обновление запущено, сервис перезапустится");
+          <button className="btn btn-ghost btn-sm" onClick={async () => {
+            if (!confirm("Обновить эту admin-панель и перезапустить сервис?")) return;
+            try {
+              const r = await apiPost("/api/update");
+              toast.push(r.up_to_date ? "Последняя версия уже установлена"
+                : "Обновление запущено, сервис перезапустится");
+            } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
           }}>↺ Обновить панель</button>
         </div>
       </div>
@@ -131,7 +141,12 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
     <Modal title={`${srv.name} · ${srv.country}`} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)}>✎ Изменить</button>
-        <button className="btn btn-ghost btn-sm" onClick={() => onAction(() => apiPost("/api/servers/update", { server_id: srv.id }), "Обновление ноды запущено")}>↺ Обновить</button>
+        <button className="btn btn-ghost btn-sm" onClick={async () => {
+          try {
+            const r = await apiPost("/api/servers/update", { server_id: srv.id });
+            toast.push(r.up_to_date ? "Последняя версия уже установлена" : "Обновление ноды запущено");
+          } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
+        }}>↺ Обновить</button>
         <button className="btn btn-success btn-sm" disabled={!anyStopped} onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
         <button className="btn btn-danger btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
         <button className="btn btn-warning btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>

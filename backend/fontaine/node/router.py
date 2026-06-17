@@ -132,14 +132,22 @@ async def self_update(request: Request) -> Response:
     if not _authed(request):
         return _ok({"error": "Unauthorized"}, 401)
     from .. import updater
+    if updater.is_up_to_date():
+        return _ok({"ok": True, "up_to_date": True, "message": "Последняя версия уже установлена"})
     ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True)
-    return _ok({"ok": ok, "message": msg})
+    return _ok({"ok": ok, "up_to_date": False, "message": msg})
 
 
 @router.get("/api/updating")
 async def updating(request: Request) -> Response:
     from .. import updater
     return _ok(updater.update_status())
+
+
+@router.get("/api/version")
+async def version(request: Request) -> Response:
+    from .. import updater
+    return _ok(updater.version_info())
 
 
 @router.get("/api/genkey")
@@ -343,8 +351,11 @@ async def api_v1(request: Request) -> Response:
         return _enc(ak, {"ok": True})
     if action == "update_panel":
         from .. import updater
+        if updater.is_up_to_date():
+            return _enc(ak, {"ok": True, "up_to_date": True,
+                             "message": "Последняя версия уже установлена"})
         ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True)
-        return _enc(ak, {"ok": ok, "message": msg})
+        return _enc(ak, {"ok": ok, "up_to_date": False, "message": msg})
     return _enc(ak, {"error": "unknown action"}, 400)
 
 

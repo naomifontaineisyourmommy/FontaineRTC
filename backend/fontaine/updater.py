@@ -14,15 +14,21 @@ import shutil
 import stat
 import subprocess
 import threading
+import time
 import urllib.request
 from pathlib import Path
 
 PANEL_REPO = os.environ.get("FONTAINE_REPO", "naomifontaineisyourmommy/FontaineRTC")
+PANEL_BRANCH = os.environ.get("FONTAINE_BRANCH", "master")
 BINARY_REPO = os.environ.get("FONTAINE_BINARY_REPO", "naomifontaineisyourmommy/OlcRTC-AdvancedInteractive")
 BINARY_ASSET = os.environ.get("FONTAINE_BINARY_ASSET", "olcrtc-linux-amd64")
 RESTART_CMD = os.environ.get("FONTAINE_RESTART_CMD", "systemctl restart fontaine")
 
 _UA = {"User-Agent": "FontaineRTC-updater"}
+
+# cache the latest remote commit briefly to avoid hammering the GitHub API
+_LATEST_TTL = 300.0
+_latest_cache: dict = {"sha": "", "at": 0.0}
 
 
 def _api(url: str, timeout: int = 15) -> object:
@@ -144,3 +150,41 @@ def start_update(install_dir: Path, fetch_binary: bool = True) -> tuple[bool, st
 
     threading.Thread(target=worker, daemon=True).start()
     return True, "update started"
+
+
+# ── versioning (commit-based) ───────────────────────────────────────────────────
+def current_commit() -> str:
+    """Full SHA of the installed checkout (== the version installed/last updated)."""
+    ok, out = _run(["git", "rev-parse", "HEAD"], cwd=install_dir())
+    return out.strip() if ok else ""
+
+
+def latest_commit() -> str:
+    """Full SHA of the newest commit on the repo's branch (cached briefly)."""
+    now = time.time()
+    if _latest_cache["sha"] and now - _latest_cache["at"] < _LATEST_TTL:
+        return _latest_cache["sha"]
+    try:
+        data = _api(f"https://api.github.com/repos/{PANEL_REPO}/commits/{PANEL_BRANCH}")
+        sha = data.get("sha", "") if isinstance(data, dict) else ""
+    except Exception:
+        sha = ""
+    if sha:
+        _latest_cache.update(sha=sha, at=now)
+    return sha or _latest_cache["sha"]
+
+
+def is_up_to_date() -> bool:
+    """True only when we can confirm the installed commit == the latest commit.
+    Unknown latest (offline) -> False, so an explicit update is still allowed."""
+    cur, lat = current_commit(), latest_commit()
+    return bool(cur and lat and cur == lat)
+
+
+def version_info() -> dict:
+    cur, lat = current_commit(), latest_commit()
+    return {
+        "current": cur[:7] if cur else "unknown",
+        "latest": lat[:7] if lat else "",
+        "update_available": bool(cur and lat and cur != lat),
+    }

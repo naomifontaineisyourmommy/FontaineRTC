@@ -104,6 +104,7 @@ header.app-header {
   background: var(--ft-accent-soft); color: var(--ft-accent); font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.06em;
 }
+.version { font-family: monospace; font-size: 0.68rem; color: var(--ft-version-text); align-self: flex-end; }
 
 /* ── buttons ── */
 .btn {

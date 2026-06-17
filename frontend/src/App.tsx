@@ -17,6 +17,7 @@ export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [auth, setAuth] = useState<AuthState>("checking");
   const [upd, setUpd] = useState<UpdState>(NO_UPD);
+  const [version, setVersion] = useState("");
   const wasUpdating = useRef(false);
   const toast = useToast();
 
@@ -34,6 +35,17 @@ export default function App() {
       .then((r) => { setRole(r); return probe(r); })
       .catch(() => setRole(null));
   }, []);
+
+  // version + "update available" check, once on open
+  useEffect(() => {
+    fetch("/api/version")
+      .then((r) => r.json())
+      .then((d) => {
+        setVersion(d.current || "");
+        if (d.update_available) toast.push("Доступно обновление");
+      })
+      .catch(() => {});
+  }, [toast]);
 
   // Poll update status — also catches updates triggered externally via the API
   // (the node case, when the admin panel pushes update_panel).
@@ -79,6 +91,7 @@ export default function App() {
           <div className="logo">
             <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
             <span className="role-pill">{role}</span>
+            {version && <span className="version">{version}</span>}
           </div>
           <div className="hdr-actions">
             <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
