@@ -35,7 +35,7 @@ export const DARK: Theme = {
     "--ft-log-bg": "#07070b",
     "--ft-log-text": "#c8d0d8",
     "--ft-scrollbar": "#2a2a3a",
-    "--ft-search-bg": "#33343f",
+    "--ft-search-bg": "#1c1d30",
     "--ft-log-base": "#9ca3af",
     "--ft-log-crit": "#f87171",
     "--ft-log-err": "#f87171",
