@@ -19,6 +19,10 @@ from pathlib import Path
 WDTT_DIR = Path(os.environ.get("FONTAINE_WDTT_DIR", "/etc/wdtt"))
 PASSWORDS_JSON = WDTT_DIR / "passwords.json"
 SERVER_LOG = WDTT_DIR / "server.log"
+# FontaineRTC-only sidecar: extra per-password metadata the wdtt-server neither
+# needs nor preserves (it rewrites passwords.json on its own). Keeps the VK-hash
+# (and host) so the "wdtt://" invite link can be rebuilt for the users table.
+META_JSON = WDTT_DIR / "fontaine-meta.json"
 
 def load() -> dict:
     try:
@@ -40,6 +44,26 @@ def save(data: dict) -> None:
     except OSError:
         pass
     tmp.replace(PASSWORDS_JSON)
+
+
+def load_meta() -> dict:
+    """{ "<password>": {"vk_hash": "...", "host": "..."} } — fresh dict always."""
+    try:
+        data = json.loads(META_JSON.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_meta(data: dict) -> None:
+    WDTT_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = META_JSON.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    try:
+        os.chmod(tmp, 0o600)
+    except OSError:
+        pass
+    tmp.replace(META_JSON)
 
 
 def server_stats() -> dict:

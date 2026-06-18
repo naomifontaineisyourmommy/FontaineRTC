@@ -80,8 +80,18 @@ class WdttManager:
             _systemctl("restart")
 
     # ── users ───────────────────────────────────────────────────────────────--
+    def _uri(self, pw: str, meta: dict) -> str:
+        """Rebuild the wdtt:// invite link for a password if a VK-hash is stored."""
+        m = meta.get(pw) or {}
+        vk = (m.get("vk_hash") or "").strip()
+        host = (m.get("host") or "").strip()
+        if not vk or not host:
+            return ""
+        return f"wdtt://{host}:{DTLS_PORT}:{WG_PORT}:{TUN_PORT}:{pw}:{vk}"
+
     def list_users(self) -> list[dict]:
         data = store.load()
+        meta = store.load_meta()
         devices = data.get("devices", {})
         now = int(time.time())
         out = []
@@ -104,6 +114,8 @@ class WdttManager:
                 "up_bytes": e.get("up_bytes", 0),
                 "device_id": dev,
                 "device_ip": devices.get(dev, {}).get("ip", "") if dev else "",
+                "vk_hash": (meta.get(pw) or {}).get("vk_hash", ""),
+                "uri": self._uri(pw, meta),
             })
         return out
 
@@ -120,10 +132,16 @@ class WdttManager:
 
         self._edit(mutator)
         host = host.strip() or detect_ip() or "YOUR_SERVER_IP"
+        vk = vk_hash.strip()
+        # Remember host + VK-hash so the users table can rebuild the wdtt:// link
+        # later (the wdtt-server itself stores neither).
+        meta = store.load_meta()
+        meta[pw] = {"vk_hash": vk, "host": host}
+        store.save_meta(meta)
         result = {"password": pw, "expires_at": exp, "days": int(days), "host": host,
                   "ports": {"dtls": DTLS_PORT, "wg": WG_PORT, "tun": TUN_PORT}}
-        if vk_hash.strip():
-            result["uri"] = f"wdtt://{host}:{DTLS_PORT}:{WG_PORT}:{TUN_PORT}:{pw}:{vk_hash.strip()}"
+        if vk:
+            result["uri"] = f"wdtt://{host}:{DTLS_PORT}:{WG_PORT}:{TUN_PORT}:{pw}:{vk}"
         return result
 
     def del_user(self, password: str) -> bool:
@@ -138,6 +156,9 @@ class WdttManager:
                 d.get("devices", {}).pop(devid, None)
 
         self._edit(mutator)
+        meta = store.load_meta()
+        if meta.pop(password, None) is not None:
+            store.save_meta(meta)
         return True
 
     def set_deactivated(self, password: str, value: bool) -> bool:

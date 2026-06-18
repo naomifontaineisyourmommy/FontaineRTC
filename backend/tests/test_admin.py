@@ -43,7 +43,7 @@ def test_group_and_server_crud(client):
     assert "img" in data["servers"][0]["flag"]
     assert data["servers"][0]["online"] is False
     # duplicate server rejected
-    g = data["groups"][0]["id"]
+    g = data["servers"][0]["group_id"]
     dup = client.post("/api/servers/add", json={
         "ip": "10.0.0.9:8080", "api_key": SRV_KEY,
         "country": "Germany", "name": "x", "group_id": g}).json()

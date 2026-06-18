@@ -38,6 +38,10 @@ class AdminDB:
             );
             """
         )
+        # Seed a first group on a fresh install so a server can be added right
+        # away without having to create a group first.
+        if self._db.execute("SELECT COUNT(*) FROM groups").fetchone()[0] == 0:
+            self._db.execute("INSERT INTO groups (name) VALUES (?)", ("SP-01",))
         self._db.commit()
 
     def checkpoint(self) -> None:

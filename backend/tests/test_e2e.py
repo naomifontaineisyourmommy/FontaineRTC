@@ -24,6 +24,7 @@ def test_admin_node_e2e(tmp_path, monkeypatch):
     monkeypatch.setattr(wstore, "WDTT_DIR", tmp_path / "wdtt")
     monkeypatch.setattr(wstore, "PASSWORDS_JSON", tmp_path / "wdtt" / "passwords.json")
     monkeypatch.setattr(wstore, "SERVER_LOG", tmp_path / "wdtt" / "server.log")
+    monkeypatch.setattr(wstore, "META_JSON", tmp_path / "wdtt" / "fontaine-meta.json")
 
     node_app = create_app()
     with TestClient(node_app) as node_client:

@@ -186,7 +186,7 @@ export function Peers({ count, devices }: { count: number; devices?: string[] })
     <span className="peers">
       👥 {count}
       <span className="peers-pop">
-        <div className="peers-title">Подключённые HWID</div>
+        <div className="peers-title">Подключённые OlcRTC</div>
         {list.length
           ? list.map((d) => <div key={d} className="peers-hwid">{d}</div>)
           : <div className="faint">Никто не подключён</div>}

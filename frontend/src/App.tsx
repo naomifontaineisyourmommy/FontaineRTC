@@ -130,9 +130,7 @@ export default function App() {
           <div className="logo">
             <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
             <span className="role-pill">{role}</span>
-            {role === "node" && (
-              <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} onClick={startUpdate}>↺ Обновить</button>
-            )}
+            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} onClick={startUpdate}>↺ Обновить</button>
             {role === "node" && (
               <ModeToggle value={nodeMode}
                 options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}

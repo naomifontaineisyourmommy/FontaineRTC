@@ -68,14 +68,6 @@ export function AdminDashboard() {
               toast.push(`Обновление: запущено ${started}, уже актуальны ${upToDate}`);
             } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
           }}>↺ Обновить ноды</button>
-          <button className="btn btn-ghost btn-sm" onClick={async () => {
-            if (!confirm("Обновить эту admin-панель и перезапустить сервис?")) return;
-            try {
-              const r = await apiPost("/api/update");
-              toast.push(r.up_to_date ? "Последняя версия уже установлена"
-                : "Обновление запущено, сервис перезапустится");
-            } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
-          }}>↺ Обновить панель</button>
         </div>
       </div>
 

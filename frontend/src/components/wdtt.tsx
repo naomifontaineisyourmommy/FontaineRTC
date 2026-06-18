@@ -12,6 +12,8 @@ export interface WdttUser {
   up_bytes: number;
   device_id: string;
   device_ip: string;
+  vk_hash?: string;
+  uri?: string;            // ready wdtt:// link (present when a VK-hash is set)
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -42,11 +44,19 @@ export function WdttUsersTable({ users, onToggle, onDelete }: {
         return (
           <div className="card" key={u.password} style={{ marginBottom: 8, padding: 12 }}>
             <div className="row-between">
-              <span className="uri uri-copy" style={{ maxWidth: "60%" }}
-                title="Нажмите, чтобы скопировать пароль"
-                onClick={() => { copy(u.password); toast.push("Пароль скопирован"); }}>
-                {u.password}
-              </span>
+              {u.uri ? (
+                <span className="uri uri-copy" style={{ maxWidth: "60%" }}
+                  title="Нажмите, чтобы скопировать ссылку wdtt://"
+                  onClick={() => { copy(u.uri!); toast.push("Ссылка wdtt:// скопирована"); }}>
+                  {u.uri}
+                </span>
+              ) : (
+                <span className="uri uri-copy" style={{ maxWidth: "60%" }}
+                  title="Нажмите, чтобы скопировать пароль"
+                  onClick={() => { copy(u.password); toast.push("Пароль скопирован"); }}>
+                  {u.password}
+                </span>
+              )}
               <span className="row" style={{ gap: 6 }}>
                 <span className={`badge ${st.cls}`}>{st.label}</span>
                 <Switch checked={u.status !== "deactivated"} onChange={() => onToggle(u)} />
