@@ -26,9 +26,6 @@
 ⠀⠀⠀⣠⣿⣿⣿⣷⣌⠻⡄⠀⠀⠀⠀⠀⠀⠹⣿⣿⣷⣄⡀⠀⠀⠀⠈⠉⠋⠁⠀⠀⠀⠀⢀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ⠀⠀⠀⠻⣿⣿⣿⣿⣿⣷⣌⠀⠀⠀⠀⠀⠀⠀⢿⣿⣿⣿⣿⣶⢀⡀⠀⠀⠀⠀⠀⠀⠀⢀⡎⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 
-  ┌──────────────────────────────────────┐
-  │ --- Naomi Fontaine Is Your Mommy --- │
-  └──────────────────────────────────────┘
 
 Единая панель управления [OlcRTC](https://github.com/openlibrecommunity/olcrtc) и [WDTT](https://github.com/amurcanov/proxy-turn-vk-android)
 
