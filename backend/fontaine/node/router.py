@@ -19,6 +19,7 @@ import zipfile
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 
+from .. import updater
 from ..core import crypto, security
 from ..core.compat import COMPAT_SET
 from . import instance as inst
@@ -28,6 +29,20 @@ from .wdtt.manager import WdttManager
 
 router = APIRouter(tags=["node"])
 _wdtt = WdttManager()
+
+
+def _node_up_to_date() -> bool:
+    """Up to date only when FontaineRTC, olcrtc AND (if present) WDTT are current."""
+    if not updater.is_up_to_date(check_binary=True):
+        return False
+    if wdtt_installer.is_installed() and not wdtt_installer.is_up_to_date():
+        return False
+    return True
+
+
+def _node_update_extra():
+    """Extra update step run before restart — refresh WDTT too if installed."""
+    return wdtt_installer.reinstall_latest if wdtt_installer.is_installed() else None
 
 # config keys the settings UI may change
 _CONFIG_EDITABLE = {
@@ -134,10 +149,10 @@ async def save_config(request: Request) -> Response:
 async def self_update(request: Request) -> Response:
     if not _authed(request):
         return _ok({"error": "Unauthorized"}, 401)
-    from .. import updater
-    if updater.is_up_to_date(check_binary=True):
+    if _node_up_to_date():
         return _ok({"ok": True, "up_to_date": True, "message": "Последняя версия уже установлена"})
-    ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True)
+    ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True,
+                                   extra=_node_update_extra())
     return _ok({"ok": ok, "up_to_date": False, "message": msg})
 
 
@@ -149,11 +164,11 @@ async def updating(request: Request) -> Response:
 
 @router.get("/api/version")
 async def version(request: Request) -> Response:
-    from .. import updater
     info = updater.version_info(check_binary=True)
-    # WDTT has its own install/update flow (its own UI section), so keep its
-    # update flag in a separate block — don't trip the panel update prompt.
-    info["wdtt"] = wdtt_installer.version_info()
+    w = wdtt_installer.version_info()
+    info["wdtt"] = w
+    # one update covers all three (FontaineRTC + olcrtc + WDTT), so surface any
+    info["update_available"] = info["update_available"] or w["update_available"]
     return _ok(info)
 
 
@@ -357,11 +372,11 @@ async def api_v1(request: Request) -> Response:
         mgr.cfg.set("jitsi_domains", normalized)
         return _enc(ak, {"ok": True})
     if action == "update_panel":
-        from .. import updater
-        if updater.is_up_to_date(check_binary=True):
+        if _node_up_to_date():
             return _enc(ak, {"ok": True, "up_to_date": True,
                              "message": "Последняя версия уже установлена"})
-        ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True)
+        ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True,
+                                       extra=_node_update_extra())
         return _enc(ak, {"ok": ok, "up_to_date": False, "message": msg})
     return _enc(ak, {"error": "unknown action"}, 400)
 

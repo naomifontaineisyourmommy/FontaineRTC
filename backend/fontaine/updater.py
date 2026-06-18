@@ -181,23 +181,31 @@ def _set_status(**kw) -> None:
         _status.update(kw)
 
 
-def start_update(install_dir: Path, fetch_binary: bool = True) -> tuple[bool, str]:
+def start_update(install_dir: Path, fetch_binary: bool = True, extra=None) -> tuple[bool, str]:
     """Begin an update in the background. Returns immediately so the UI can poll
-    update_status(). On success the service is restarted (systemd brings it back)."""
+    update_status(). `extra()` (optional) runs after the binary step, before the
+    restart — used to update WDTT too (kept out of updater to avoid a cycle).
+    On success the service is restarted (systemd brings it back)."""
+    total = 5 if extra else 4
     with _status_lock:
         if _status["updating"]:
             return False, "update already in progress"
-        _status.update(updating=True, step="Подключение…", index=0,
-                       total=_UPDATE_TOTAL, error="")
+        _status.update(updating=True, step="Подключение…", index=0, total=total, error="")
 
     def worker():
         ok, msg = self_update(install_dir, fetch_binary,
                               progress=lambda i, s: _set_status(index=i, step=s))
-        if ok:
-            _set_status(index=_UPDATE_TOTAL, step="Перезапуск…")
-            schedule_restart(1.5)
-        else:
+        if not ok:
             _set_status(updating=False, step="", error=msg)
+            return
+        if extra:
+            _set_status(index=4, step="WDTT…")
+            try:
+                extra()
+            except Exception:
+                pass  # non-fatal: panel/olcrtc already updated
+        _set_status(index=total, step="Перезапуск…")
+        schedule_restart(1.5)
 
     threading.Thread(target=worker, daemon=True).start()
     return True, "update started"

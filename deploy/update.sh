@@ -34,6 +34,17 @@ from pathlib import Path
 from fontaine.updater import download_binary
 print("   olcrtc release:", download_binary(Path("$INSTALL_DIR/$BINARY_NAME")))
 PY
+  say "Refreshing WDTT (latest release)"
+  FONTAINE_INSTALL_DIR="$INSTALL_DIR" "$INSTALL_DIR/.venv/bin/python" - <<'PY' || say "WDTT refresh skipped/failed"
+from fontaine.node.wdtt import installer
+if installer.is_installed():
+    ok, msg = installer.reinstall_latest()
+    print("   WDTT:", "ok" if ok else msg)
+else:
+    ok, msg = installer.install_sync(dtls_port=56000, wg_port=56001, ssh_port=22,
+                                     main_password=__import__("secrets").token_urlsafe(12))
+    print("   WDTT (fresh):", "ok" if ok else msg)
+PY
 fi
 
 # Ensure the SPA path is set (older installs predate this).

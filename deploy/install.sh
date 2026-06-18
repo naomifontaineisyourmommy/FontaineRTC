@@ -94,6 +94,20 @@ from fontaine.updater import download_binary
 tag = download_binary(Path("$INSTALL_DIR/$BINARY_NAME"))
 print("   olcrtc release:", tag)
 PY
+
+  # WDTT (second protocol): install on fresh setup, refresh on re-run.
+  say "Installing WDTT (server + deploy)"
+  FONTAINE_INSTALL_DIR="$INSTALL_DIR" "$INSTALL_DIR/.venv/bin/python" - <<'PY' || say "WDTT step failed — you can retry from the panel"
+import secrets
+from fontaine.node.wdtt import installer
+if installer.is_installed():
+    ok, msg = installer.reinstall_latest()
+else:
+    ok, msg = installer.install_sync(dtls_port=56000, wg_port=56001, ssh_port=22,
+                                     main_password=secrets.token_urlsafe(12), dns="1.1.1.1")
+print("   WDTT:", "ok" if ok else msg)
+raise SystemExit(0 if ok else 1)
+PY
 fi
 
 # ── detect server IP (used for panel URL + push target) ──
