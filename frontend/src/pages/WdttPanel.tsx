@@ -28,7 +28,7 @@ function WdttLogView() {
   useEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight; }, [lines]);
   if (loading) {
     return (
-      <div className="log" ref={box}>
+      <div className="log log-tall" ref={box}>
         {Array.from({ length: 9 }).map((_, i) => (
           <div key={i} className="sk-line" style={{ width: `${40 + ((i * 23) % 55)}%` }} />
         ))}
@@ -36,7 +36,7 @@ function WdttLogView() {
     );
   }
   return (
-    <div className="log" ref={box}
+    <div className="log log-tall" ref={box}
       dangerouslySetInnerHTML={{
         __html: lines.length ? lines.map(highlightLine).join("")
           : '<span class="faint">Логи WDTT появятся здесь…</span>',
@@ -101,7 +101,6 @@ export function WdttPanel() {
               </span>
             )}
           </div>
-          <a className="btn btn-ghost btn-sm" href={sseUrl("/api/wdtt/logs/download")}>⬇ Скачать логи</a>
         </div>
 
         <WdttAddForm onAdd={addUser} />
@@ -112,7 +111,12 @@ export function WdttPanel() {
           onDelete={(u) => act(() => apiPost("/api/wdtt/users/delete", { password: u.password }), "Удалён")}
         />
       </div>
-      <WdttLogView />
+      <div>
+        <div className="row" style={{ justifyContent: "flex-end", marginBottom: 8 }}>
+          <a className="btn btn-ghost btn-sm" href={sseUrl("/api/wdtt/logs/download")}>⬇ Скачать логи</a>
+        </div>
+        <WdttLogView />
+      </div>
     </div>
   );
 }

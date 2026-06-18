@@ -133,15 +133,15 @@ export default function App() {
             {ver.current && <span className="version" title="Версия FontaineRTC">{ver.current}</span>}
             {ver.binary && <span className="version" title="Версия OlcRTC-AdvancedInteractive">{ver.binary}</span>}
             {role === "node" && ver.wdtt && <span className="version" title="Версия WDTT">{ver.wdtt}</span>}
+            {role === "node" && (
+              <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} onClick={startUpdate}>↺ Обновить</button>
+            )}
+            {role === "node" && (
+              <ModeToggle value={nodeMode}
+                options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}
+                onChange={(v) => setNodeMode(v as "olcrtc" | "wdtt")} />
+            )}
           </div>
-          {role === "node" && (
-            <button className="btn btn-ghost btn-sm" onClick={startUpdate}>↺ Обновить</button>
-          )}
-          {role === "node" && (
-            <ModeToggle value={nodeMode}
-              options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}
-              onChange={(v) => setNodeMode(v as "olcrtc" | "wdtt")} />
-          )}
           <div className="hdr-actions">
             <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
             <button className="btn btn-ghost" onClick={logout}>Выйти</button>
