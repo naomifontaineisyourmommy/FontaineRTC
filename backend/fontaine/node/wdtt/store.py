@@ -20,14 +20,11 @@ WDTT_DIR = Path(os.environ.get("FONTAINE_WDTT_DIR", "/etc/wdtt"))
 PASSWORDS_JSON = WDTT_DIR / "passwords.json"
 SERVER_LOG = WDTT_DIR / "server.log"
 
-_EMPTY = {"passwords": {}, "devices": {}}
-
-
 def load() -> dict:
     try:
         data = json.loads(PASSWORDS_JSON.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        return dict(_EMPTY)
+        return {"passwords": {}, "devices": {}}   # fresh dicts — never shared/mutated
     data.setdefault("passwords", {})
     data.setdefault("devices", {})
     return data
