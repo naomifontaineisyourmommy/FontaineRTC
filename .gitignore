@@ -34,6 +34,3 @@ node_modules/
 Thumbs.db
 .idea/
 .vscode/
-
-# Temporary WDTT integration material (remove later)
-tempwdtt/
