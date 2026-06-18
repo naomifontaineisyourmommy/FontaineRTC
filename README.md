@@ -58,7 +58,8 @@ sudo bash /opt/fontaine/deploy/uninstall.sh --purge   # удалить полн�
 - Протокол node↔admin: совместим с оригиналами (Hash-CTR + HMAC-SHA256)
 
 Подробнее — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
-[docs/PROTOCOL.md](docs/PROTOCOL.md) и [docs/THEMES.md](docs/THEMES.md).
+[docs/PROTOCOL.md](docs/PROTOCOL.md), [docs/API.md](docs/API.md) и
+[docs/THEMES.md](docs/THEMES.md).
 
 ## Темы оформления
 
@@ -108,7 +109,7 @@ docker compose up --build
 | 3    | Роль admin (backend)             | ✅ |
 | 4    | Frontend + темы                  | ✅ |
 | 5    | Деплой (install/update/uninstall) | ✅ |
-| 6    | Паритет и тесты                  | ⏳ |
+| 6    | Паритет и тесты (29 тестов, e2e) | ✅ |
 
 ---
 

@@ -57,10 +57,16 @@
 - [ ] nginx/HTTPS автонастройка (admin), UFW, systemd
 - [ ] `update.sh`-эквивалент
 
-## Фаза 6 — Паритет и тесты
-- [ ] Сверка фича-в-фичу с README обоих оригиналов
-- [ ] Тесты API ноды/админа, push-протокола, watchdog-логики
-- [ ] E2E: node↔admin через docker-compose
+## Фаза 6 — Паритет и тесты ✅
+- [x] Тесты ядра: crypto (round-trip/tamper/replay), uri, compat
+- [x] Тесты ноды: /api/v1 CRUD + compat + replay + bad-key; list отдаёт wb_token/jitsi_domains
+- [x] Тесты админки: login, CRUD групп/серверов, приём push, внешний list
+- [x] Тесты сессий (stateless, переживают рестарт) и пароля
+- [x] **E2E node↔admin** по реальному шифрованному протоколу (test_e2e): регистрация,
+      poll, прокси create/delete, агрегация /api/data, внешний /api/v1 list — 29 тестов
+- [x] Живая проверка по реальному HTTP (отдельный процесс ноды) — протокол ок
+- [x] Документация API — [API.md](API.md)
+- [ ] Опционально: e2e через docker-compose (двумя контейнерами)
 
 ## Фаза 7 — Модернизация (опционально)
 - [ ] Новый транспорт протокола (mTLS / JWT) вместо Hash-CTR
