@@ -65,6 +65,7 @@ FONTAINE_ROLE=$ROLE
 FONTAINE_PANEL_HOST=0.0.0.0
 FONTAINE_PANEL_PORT=$PORT
 FONTAINE_DATA_DIR=$INSTALL_DIR/data
+FONTAINE_INSTALL_DIR=$INSTALL_DIR
 FONTAINE_BINARY_PATH=$INSTALL_DIR/$BINARY_NAME
 FONTAINE_API_KEY=$API_KEY
 FONTAINE_PANEL_PASSWORD=$PASSWORD
@@ -78,6 +79,9 @@ fi
 # Ensure the SPA path is set (installed package can't find frontend/dist relatively).
 grep -q '^FONTAINE_DIST_DIR=' "$ENV_FILE" \
   || echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$ENV_FILE"
+# Ensure the install dir is set (pip-installed package can't locate the checkout).
+grep -q '^FONTAINE_INSTALL_DIR=' "$ENV_FILE" \
+  || echo "FONTAINE_INSTALL_DIR=$INSTALL_DIR" >> "$ENV_FILE"
 
 # ── olcrtc binary (node role) — always the latest release ──
 if [ "$ROLE" = "node" ]; then

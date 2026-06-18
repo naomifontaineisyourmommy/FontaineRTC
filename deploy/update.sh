@@ -35,6 +35,9 @@ fi
 # Ensure the SPA path is set (older installs predate this).
 grep -q '^FONTAINE_DIST_DIR=' "$INSTALL_DIR/.env" 2>/dev/null \
   || echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$INSTALL_DIR/.env"
+# Ensure the install dir is set (needed so the panel can locate its own checkout).
+grep -q '^FONTAINE_INSTALL_DIR=' "$INSTALL_DIR/.env" 2>/dev/null \
+  || echo "FONTAINE_INSTALL_DIR=$INSTALL_DIR" >> "$INSTALL_DIR/.env"
 
 # Ensure admin has a push URL so nodes receive a push target (else: only polling).
 if [ "$ROLE" = "admin" ] && ! grep -q '^FONTAINE_PANEL_URL=' "$INSTALL_DIR/.env" 2>/dev/null; then

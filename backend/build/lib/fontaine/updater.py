@@ -97,14 +97,7 @@ def latest_binary_tag() -> str:
 
 
 def install_dir() -> Path:
-    """Repo root that contains backend/ (where the service is installed).
-
-    Prefer the explicit FONTAINE_INSTALL_DIR (set by install.sh) — when the
-    package is pip-installed into a venv, the __file__ heuristic points at
-    site-packages, not the git checkout."""
-    env = os.environ.get("FONTAINE_INSTALL_DIR")
-    if env:
-        return Path(env)
+    """Repo root that contains backend/ (where the service is installed)."""
     return Path(__file__).resolve().parents[2]
 
 
