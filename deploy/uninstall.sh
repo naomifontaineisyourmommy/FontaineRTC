@@ -24,6 +24,14 @@ systemctl daemon-reload
 # best-effort: stop any stray olcrtc processes (node hosts)
 pkill -f olcrtc-linux-amd64 2>/dev/null || true
 
+# Remove WDTT too if this node installed it (same mechanism the app uses;
+# keeps /etc/wdtt/passwords.json). deploy.sh was persisted at install time.
+if [ -x /usr/local/bin/wdtt-deploy.sh ]; then
+  say "Removing WDTT (wdtt-server)"
+  bash /usr/local/bin/wdtt-deploy.sh uninstall 2>/dev/null || true
+  rm -f /usr/local/bin/wdtt-deploy.sh /usr/local/bin/wdtt-server.version
+fi
+
 # remove nginx site if present
 if [ -e /etc/nginx/sites-enabled/fontaine ]; then
   rm -f /etc/nginx/sites-enabled/fontaine /etc/nginx/sites-available/fontaine

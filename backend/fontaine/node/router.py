@@ -150,7 +150,11 @@ async def updating(request: Request) -> Response:
 @router.get("/api/version")
 async def version(request: Request) -> Response:
     from .. import updater
-    return _ok(updater.version_info(check_binary=True))
+    info = updater.version_info(check_binary=True)
+    # WDTT has its own install/update flow (its own UI section), so keep its
+    # update flag in a separate block — don't trip the panel update prompt.
+    info["wdtt"] = wdtt_installer.version_info()
+    return _ok(info)
 
 
 @router.get("/api/genkey")
