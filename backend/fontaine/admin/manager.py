@@ -100,6 +100,21 @@ class AdminManager:
                 print(f"[poll] {e}")
             stop.wait(self.cfg.get("poll_interval", 30))
 
+    def refresh_server(self, srv: dict) -> None:
+        """Re-poll one server now (used right after a proxied action for snappy UI)."""
+        try:
+            res = self.vps_list(srv["ip"], srv["api_key"])
+        except Exception:
+            return
+        c = self.cache_get(srv["id"])
+        self.cache_set(srv["id"], {
+            "online": True, "stats": res.get("server", {}), "users": res.get("users", []),
+            "last_seen": time.time(), "last_push_at": c.get("last_push_at", 0),
+            "masterdnsvpn": res.get("masterdnsvpn", c.get("masterdnsvpn")),
+            "jitsi_domains": res.get("jitsi_domains", c.get("jitsi_domains", "")),
+            "wdtt": res.get("wdtt", c.get("wdtt", {})),
+        })
+
     def do_poll(self) -> None:
         stale_after = self.push_stale_after()
         reregister_every = max(300.0, self.cfg.get("poll_interval", 30) * 10)

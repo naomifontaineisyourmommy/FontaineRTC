@@ -163,7 +163,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
       <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <span className={`badge ${srv.online ? "badge-on" : "badge-off"}`}>{srv.online ? "online" : "offline"}</span>
         <span className="muted">CPU {srv.cpu}% · RAM {srv.ram}%</span>
-        <span className="muted"><Peers count={srv.clients_online} devices={srv.users.flatMap((u) => u.peers_devices ?? [])} /></span>
+        {mode === "olcrtc" && <span className="muted"><Peers count={srv.clients_online} devices={srv.users.flatMap((u) => u.peers_devices ?? [])} /></span>}
         {mode === "olcrtc" && <button className="btn btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAdd(true)}>＋ Инстанс</button>}
       </div>
 
@@ -173,11 +173,10 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
           : <>
             <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
               <span className={`badge ${wdtt.active ? "badge-on" : "badge-off"}`}>
-                {wdtt.active ? "сервис активен" : "не активен"}
+                {wdtt.active ? "WDTT активен" : "WDTT не активен"}
               </span>
-              <span className="muted">версия: {wdtt.version || "?"}</span>
               {wdtt.main_password && (
-                <span className="muted">главный:{" "}
+                <span className="muted">Главный пароль{" "}
                   <span className="uri uri-copy" style={{ padding: "2px 6px" }}
                     onClick={() => { copy(wdtt.main_password); toast.push("Главный пароль скопирован"); }}>
                     {wdtt.main_password}

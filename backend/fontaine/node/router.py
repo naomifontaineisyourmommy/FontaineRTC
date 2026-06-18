@@ -406,12 +406,17 @@ async def api_v1(request: Request) -> Response:
                                  vk_hash=str(payload.get("vk_hash", "")))
         except ValueError as e:
             return _enc(ak, {"error": str(e)})
+        mgr.notify_push()
         return _enc(ak, {"ok": True, **res})
     if action == "wdtt_del":
         ok = _wdtt.del_user(str(payload.get("password", "")))
+        if ok:
+            mgr.notify_push()
         return _enc(ak, {"ok": True} if ok else {"error": "not found"})
     if action == "wdtt_toggle":
         ok = _wdtt.set_deactivated(str(payload.get("password", "")), bool(payload.get("deactivated")))
+        if ok:
+            mgr.notify_push()
         return _enc(ak, {"ok": True} if ok else {"error": "not found"})
 
     return _enc(ak, {"error": "unknown action"}, 400)
@@ -500,7 +505,7 @@ async def wdtt_overview(request: Request) -> Response:
     if not _authed(request):
         return _ok({"error": "Unauthorized"}, 401)
     return _ok({**_wdtt.status(), "users": _wdtt.list_users(),
-                "version": wdtt_installer.version_info()})
+                "version": wdtt_installer.installed_version()})
 
 
 @router.get("/api/wdtt/installing")
@@ -518,6 +523,7 @@ async def wdtt_add(request: Request) -> Response:
                              host=str(d.get("host", "")), vk_hash=str(d.get("vk_hash", "")))
     except ValueError as e:
         return _ok({"error": str(e)}, 400)
+    _mgr(request).notify_push()   # push fresh WDTT state to the admin immediately
     return _ok({"ok": True, **res})
 
 
@@ -526,7 +532,10 @@ async def wdtt_del(request: Request) -> Response:
     if not _authed(request):
         return _ok({"error": "Unauthorized"}, 401)
     pw = str((await _json_body(request)).get("password", ""))
-    return _ok({"ok": True} if _wdtt.del_user(pw) else {"error": "not found"})
+    ok = _wdtt.del_user(pw)
+    if ok:
+        _mgr(request).notify_push()
+    return _ok({"ok": True} if ok else {"error": "not found"})
 
 
 @router.post("/api/wdtt/users/toggle")
@@ -535,6 +544,8 @@ async def wdtt_toggle(request: Request) -> Response:
         return _ok({"error": "Unauthorized"}, 401)
     d = await _json_body(request)
     ok = _wdtt.set_deactivated(str(d.get("password", "")), bool(d.get("deactivated")))
+    if ok:
+        _mgr(request).notify_push()
     return _ok({"ok": True} if ok else {"error": "not found"})
 
 

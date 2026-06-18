@@ -56,11 +56,10 @@ export function WdttPanel() {
       <div className="row-between" style={{ marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
           <span className={`badge ${d.active ? "badge-on" : "badge-off"}`}>
-            {d.active ? "сервис активен" : "сервис не активен"}
+            {d.active ? "WDTT активен" : "WDTT не активен"}
           </span>
-          <span className="muted">версия: {d.version || "?"}</span>
           {d.main_password && (
-            <span className="muted">главный пароль:{" "}
+            <span className="muted">Главный пароль{" "}
               <span className="uri uri-copy" style={{ padding: "2px 6px" }}
                 title="Скопировать главный пароль"
                 onClick={() => { copy(d.main_password); toast.push("Главный пароль скопирован"); }}>

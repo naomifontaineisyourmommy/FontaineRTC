@@ -5,7 +5,7 @@ import { Login } from "./pages/Login";
 import { NodeDashboard } from "./pages/NodeDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ThemeControls } from "./theme/ThemeControls";
-import { Modal, ModeToggle, UpdateOverlay, useToast } from "./components/ui";
+import { ErrorBoundary, Modal, ModeToggle, UpdateOverlay, useToast } from "./components/ui";
 
 type Role = "node" | "admin";
 type AuthState = "checking" | "needed" | "ok";
@@ -144,7 +144,9 @@ export default function App() {
             <button className="btn btn-ghost" onClick={logout}>Выйти</button>
           </div>
         </header>
-        {role === "node" ? <NodeDashboard mode={nodeMode} /> : <AdminDashboard />}
+        <ErrorBoundary key={role === "node" ? nodeMode : "admin"}>
+          {role === "node" ? <NodeDashboard mode={nodeMode} /> : <AdminDashboard />}
+        </ErrorBoundary>
       </>
     );
   }

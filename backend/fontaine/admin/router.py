@@ -455,4 +455,7 @@ async def node_proxy(action: str, request: Request) -> Response:
         res = mgr.vps_call(srv["ip"], srv["api_key"], payload, timeout=15)
     except Exception as e:
         return _ok({"error": f"Node unreachable: {e}"}, 502)
+    # refresh this server's cache now so the change shows immediately (no poll wait)
+    if not node_action.endswith(("_status", "_list", "get_user")):
+        mgr.refresh_server(srv)
     return _ok(res)

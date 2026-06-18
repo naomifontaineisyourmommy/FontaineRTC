@@ -1,8 +1,20 @@
 /** Small shared UI primitives: Modal + toast system. */
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { Component, createContext, useCallback, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+
+/** Stops a component crash from blanking the whole app — shows the error instead. */
+export class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
+  state = { err: null as Error | null };
+  static getDerivedStateFromError(err: Error) { return { err }; }
+  render() {
+    if (this.state.err) {
+      return <div className="empty">Ошибка интерфейса: {String(this.state.err.message || this.state.err)}</div>;
+    }
+    return this.props.children;
+  }
+}
 
 // ── Modal ──────────────────────────────────────────────────────────────────--
 // Rendered into document.body via a portal: a glass ancestor (backdrop-filter)
