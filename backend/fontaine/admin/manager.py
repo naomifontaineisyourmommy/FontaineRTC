@@ -20,6 +20,7 @@ from .flags import flag
 _EMPTY_CACHE = {
     "online": False, "stats": {}, "users": [],
     "last_seen": 0, "last_push_at": 0, "masterdnsvpn": None, "jitsi_domains": "",
+    "wdtt": {},
 }
 
 
@@ -119,6 +120,7 @@ class AdminManager:
                     "last_push_at": last_push,
                     "masterdnsvpn": res.get("masterdnsvpn", c.get("masterdnsvpn")),
                     "jitsi_domains": res.get("jitsi_domains", c.get("jitsi_domains", "")),
+                    "wdtt": res.get("wdtt", c.get("wdtt", {})),
                 })
                 if now - self._push_register_times.get(sid, 0) > reregister_every:
                     self._push_register_times[sid] = now
@@ -200,6 +202,7 @@ class AdminManager:
                                 and now - c.get("last_push_at", 0) < stale_after),
                 "masterdnsvpn": c.get("masterdnsvpn") if c["online"] else None,
                 "jitsi_domains": c.get("jitsi_domains", ""),
+                "wdtt": c.get("wdtt", {}),
                 # forward the full instance objects (node already sends everything the
                 # editor needs) + a client_id alias the frontend uses
                 "users": [{**vu, "client_id": vu.get("id", ""),
@@ -213,7 +216,7 @@ class AdminManager:
         return result
 
     def api_v1_list(self) -> dict:
-        users_out, mdns_out = [], []
+        users_out, mdns_out, wdtt_out = [], [], []
         for srv in self.db.servers():
             c = self.cache_get(srv["id"])
             for vu in c.get("users", []):
@@ -229,7 +232,12 @@ class AdminManager:
             mdns = c.get("masterdnsvpn") if c.get("online") else None
             if mdns:
                 mdns_out.append({"domain": mdns.get("domain", ""), "key": mdns.get("key", "")})
-        return {"users": users_out, "masterdnsvpn": mdns_out}
+            for wu in (c.get("wdtt", {}) or {}).get("users", []):
+                wdtt_out.append({
+                    **wu, "server_name": srv["name"], "server_country": srv["country"],
+                    "group_id": srv.get("group_id"),
+                })
+        return {"users": users_out, "masterdnsvpn": mdns_out, "wdtt": wdtt_out}
 
     def update_all_servers(self, url: str) -> list[dict]:
         servers = self.db.servers()

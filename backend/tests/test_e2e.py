@@ -20,6 +20,10 @@ def test_admin_node_e2e(tmp_path, monkeypatch):
     monkeypatch.setenv("FONTAINE_DATA_DIR", str(tmp_path / "node"))
     get_settings.cache_clear()
     from fontaine.app import create_app
+    from fontaine.node.wdtt import store as wstore
+    monkeypatch.setattr(wstore, "WDTT_DIR", tmp_path / "wdtt")
+    monkeypatch.setattr(wstore, "PASSWORDS_JSON", tmp_path / "wdtt" / "passwords.json")
+    monkeypatch.setattr(wstore, "SERVER_LOG", tmp_path / "wdtt" / "server.log")
 
     node_app = create_app()
     with TestClient(node_app) as node_client:
@@ -78,5 +82,21 @@ def test_admin_node_e2e(tmp_path, monkeypatch):
             # delete it back through the proxy
             assert admin_client.post("/api/node/delete-user",
                                      json={"server_id": sid, "id": cr["id"]}).json()["ok"]
+
+            # ── WDTT over the proxy ──
+            add = admin_client.post("/api/node/wdtt-add",
+                                    json={"server_id": sid, "days": 30, "host": "1.2.3.4"}).json()
+            assert add["ok"] and len(add["password"]) == 16
+            mgr.do_poll()
+            wtile = admin_client.get("/api/data").json()["servers"][0]["wdtt"]
+            assert len(wtile["users"]) == 1 and wtile["users"][0]["status"] == "active"
+            # external list exposes WDTT across nodes
+            body = crypto.encrypt(ak, json.dumps({"action": "list", "ts": int(time.time())}).encode())
+            ext = json.loads(crypto.decrypt(ak, admin_client.post(
+                "/api/v1", content=body, headers={"Content-Type": "text/plain"}).text))
+            assert len(ext["wdtt"]) == 1 and ext["wdtt"][0]["server_name"] == "DE-01"
+            # delete via proxy
+            assert admin_client.post("/api/node/wdtt-del",
+                                     json={"server_id": sid, "password": add["password"]}).json()["ok"]
 
     get_settings.cache_clear()

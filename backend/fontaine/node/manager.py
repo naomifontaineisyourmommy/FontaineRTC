@@ -339,10 +339,23 @@ class NodeManager:
         """Full per-instance state so the admin panel needs no extra get_user call."""
         with self.lock:
             users = [inst.public(u) for u in self.users.values()]
-        return {
+        payload = {
             "ts": int(time.time()),
             "server": sysinfo.server_stats(),
             "users": users,
             "jitsi_domains": self.cfg.get("jitsi_domains", ""),
             "masterdnsvpn": sysinfo.masterdnsvpn_config(),
         }
+        try:
+            from .wdtt.manager import WdttManager
+            from .wdtt import installer as _wi
+            wm = WdttManager()
+            st = wm.status()
+            payload["wdtt"] = {
+                "installed": st["installed"], "active": st["active"],
+                "main_password": st.get("main_password", ""),
+                "version": _wi.installed_version(), "users": wm.list_users(),
+            }
+        except Exception:
+            payload["wdtt"] = {"installed": False, "users": []}
+        return payload

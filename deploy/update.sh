@@ -34,16 +34,18 @@ from pathlib import Path
 from fontaine.updater import download_binary
 print("   olcrtc release:", download_binary(Path("$INSTALL_DIR/$BINARY_NAME")))
 PY
-  say "Refreshing WDTT (latest release)"
-  FONTAINE_INSTALL_DIR="$INSTALL_DIR" "$INSTALL_DIR/.venv/bin/python" - <<'PY' || say "WDTT refresh skipped/failed"
+  say "Checking WDTT"
+  FONTAINE_INSTALL_DIR="$INSTALL_DIR" "$INSTALL_DIR/.venv/bin/python" - <<'PY' || say "WDTT step skipped/failed"
 from fontaine.node.wdtt import installer
-if installer.is_installed():
-    ok, msg = installer.reinstall_latest()
-    print("   WDTT:", "ok" if ok else msg)
-else:
+if not installer.is_installed():
     ok, msg = installer.install_sync(dtls_port=56000, wg_port=56001, ssh_port=22,
                                      main_password=__import__("secrets").token_urlsafe(12))
     print("   WDTT (fresh):", "ok" if ok else msg)
+elif installer.version_info()["update_available"]:
+    ok, msg = installer.reinstall_latest()
+    print("   WDTT updated:", "ok" if ok else msg)
+else:
+    print("   WDTT: up to date — untouched")
 PY
 fi
 

@@ -20,6 +20,9 @@ _NODE_ACTIONS = {
     "get-user": "get_user", "set-user": "set_user", "create-user": "create_user",
     "start-user": "start_user", "stop-user": "stop_user", "delete-user": "delete_user",
     "start-all": "start_all", "stop-all": "stop_all", "restart-all": "restart_all",
+    # WDTT
+    "wdtt-status": "wdtt_status", "wdtt-list": "wdtt_list", "wdtt-add": "wdtt_add",
+    "wdtt-del": "wdtt_del", "wdtt-toggle": "wdtt_toggle",
 }
 
 
@@ -123,6 +126,7 @@ async def handle_push(sid: str, request: Request) -> Response:
         "last_push_at": time.time(),
         "masterdnsvpn": payload.get("masterdnsvpn"),
         "jitsi_domains": payload.get("jitsi_domains", ""),
+        "wdtt": payload.get("wdtt", {}),
     })
     return Response("ok", media_type="text/plain")
 

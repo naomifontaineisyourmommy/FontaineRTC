@@ -40,9 +40,23 @@ def _node_up_to_date() -> bool:
     return True
 
 
+def _wdtt_block() -> dict:
+    """WDTT state for the admin feed (list + push): status + users."""
+    st = _wdtt.status()
+    return {
+        "installed": st["installed"], "active": st["active"],
+        "main_password": st.get("main_password", ""),
+        "version": wdtt_installer.installed_version(),
+        "users": _wdtt.list_users(),
+    }
+
+
 def _node_update_extra():
-    """Extra update step run before restart — refresh WDTT too if installed."""
-    return wdtt_installer.reinstall_latest if wdtt_installer.is_installed() else None
+    """Extra update step run before restart — refresh WDTT only if a newer WDTT
+    release exists. If WDTT is already current, leave it untouched."""
+    if wdtt_installer.is_installed() and not wdtt_installer.is_up_to_date():
+        return wdtt_installer.reinstall_latest
+    return None
 
 # config keys the settings UI may change
 _CONFIG_EDITABLE = {
@@ -297,7 +311,7 @@ async def api_v1(request: Request) -> Response:
         with mgr.lock:
             users = [inst.public(u) for u in mgr.users.values()]
         return _enc(ak, {"users": users, "server": sysinfo.server_stats(),
-                         "jitsi_domains": jd})
+                         "jitsi_domains": jd, "wdtt": _wdtt_block()})
     if action == "set_push_target":
         url = payload.get("url", "").strip()
         mgr.cfg.set("push_url", url)
@@ -378,6 +392,28 @@ async def api_v1(request: Request) -> Response:
         ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True,
                                        extra=_node_update_extra())
         return _enc(ak, {"ok": ok, "up_to_date": False, "message": msg})
+
+    # ── WDTT actions (used by the admin panel) ──
+    if action == "wdtt_status":
+        return _enc(ak, _wdtt_block())
+    if action == "wdtt_list":
+        return _enc(ak, {"users": _wdtt.list_users()})
+    if action == "wdtt_add":
+        try:
+            res = _wdtt.add_user(days=int(payload.get("days", 30)),
+                                 password=str(payload.get("password", "")),
+                                 host=str(payload.get("host", "")),
+                                 vk_hash=str(payload.get("vk_hash", "")))
+        except ValueError as e:
+            return _enc(ak, {"error": str(e)})
+        return _enc(ak, {"ok": True, **res})
+    if action == "wdtt_del":
+        ok = _wdtt.del_user(str(payload.get("password", "")))
+        return _enc(ak, {"ok": True} if ok else {"error": "not found"})
+    if action == "wdtt_toggle":
+        ok = _wdtt.set_deactivated(str(payload.get("password", "")), bool(payload.get("deactivated")))
+        return _enc(ak, {"ok": True} if ok else {"error": "not found"})
+
     return _enc(ak, {"error": "unknown action"}, 400)
 
 
