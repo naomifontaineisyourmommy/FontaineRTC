@@ -143,10 +143,10 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
 
   return (
     <Modal title={`${srv.name} · ${srv.country}`} onClose={onClose}
-      headExtra={<ModeToggle value={mode}
-        options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}
-        onChange={(v) => setMode(v as "olcrtc" | "wdtt")} />}
-      footer={<>
+      headExtra={<>
+        <ModeToggle value={mode}
+          options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}
+          onChange={(v) => setMode(v as "olcrtc" | "wdtt")} />
         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)}>✎ Изменить</button>
         <button className="btn btn-ghost btn-sm" onClick={async () => {
           try {
@@ -154,18 +154,15 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
             toast.push(r.up_to_date ? "Последняя версия уже установлена" : "Обновление ноды запущено");
           } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
         }}>↺ Обновить</button>
-        {mode === "olcrtc" && <>
+      </>}>
+      {mode === "olcrtc" && (
+        <div className="row" style={{ gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
           <button className="btn btn-success btn-sm" disabled={!anyStopped} onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
           <button className="btn btn-danger btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
           <button className="btn btn-warning btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>
-        </>}
-      </>}>
-      <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
-        <span className={`badge ${srv.online ? "badge-on" : "badge-off"}`}>{srv.online ? "online" : "offline"}</span>
-        <span className="muted">CPU {srv.cpu}% · RAM {srv.ram}%</span>
-        {mode === "olcrtc" && <span className="muted"><Peers count={srv.clients_online} devices={srv.users.flatMap((u) => u.peers_devices ?? [])} /></span>}
-        {mode === "olcrtc" && <button className="btn btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAdd(true)}>＋ Инстанс</button>}
-      </div>
+          <button className="btn btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAdd(true)}>＋ Инстанс</button>
+        </div>
+      )}
 
       {mode === "wdtt" ? (
         !wdtt.installed

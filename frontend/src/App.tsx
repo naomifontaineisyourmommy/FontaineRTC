@@ -130,9 +130,6 @@ export default function App() {
           <div className="logo">
             <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
             <span className="role-pill">{role}</span>
-            {ver.current && <span className="version" title="Версия FontaineRTC">{ver.current}</span>}
-            {ver.binary && <span className="version" title="Версия OlcRTC-AdvancedInteractive">{ver.binary}</span>}
-            {role === "node" && ver.wdtt && <span className="version" title="Версия WDTT">{ver.wdtt}</span>}
             {role === "node" && (
               <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} onClick={startUpdate}>↺ Обновить</button>
             )}
@@ -143,6 +140,9 @@ export default function App() {
             )}
           </div>
           <div className="hdr-actions">
+            {ver.current && <span className="version" title="Версия FontaineRTC">{ver.current}</span>}
+            {ver.binary && <span className="version" title="Версия OlcRTC-AdvancedInteractive">{ver.binary}</span>}
+            {role === "node" && ver.wdtt && <span className="version" title="Версия WDTT">{ver.wdtt}</span>}
             <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
             <button className="btn btn-ghost" onClick={logout}>Выйти</button>
           </div>

@@ -92,13 +92,6 @@ export function NodeDashboard({ mode }: { mode: "olcrtc" | "wdtt" }) {
         </>
       )}
 
-      {status && (
-        <div className="section-title">
-          CPU {status.server.cpu_percent}% · RAM {status.server.mem_percent}%
-          ({status.server.mem_used_mb}/{status.server.mem_total_mb} MB)
-        </div>
-      )}
-
       {showAdd && <AddInstanceModal onClose={() => setShowAdd(false)}
         onCreate={(c, t) => act(() => apiPost("/api/users/add", { carrier: c, transport: t }), "Инстанс создан")} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onSaved={() => { setShowSettings(false); refresh(); }} />}
