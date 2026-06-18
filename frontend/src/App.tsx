@@ -128,7 +128,7 @@ export default function App() {
       <>
         <header className="app-header">
           <div className="logo">
-            <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
+            <img className="logo-avatar" src="/naomi.jpg" alt="" draggable={false} /> FontaineRTC
             <span className="role-pill">{role}</span>
             <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} onClick={startUpdate}>↺ Обновить</button>
             {role === "node" && (
@@ -146,7 +146,9 @@ export default function App() {
           </div>
         </header>
         <ErrorBoundary key={role === "node" ? nodeMode : "admin"}>
-          {role === "node" ? <NodeDashboard mode={nodeMode} /> : <AdminDashboard />}
+          <div className="view-fade">
+            {role === "node" ? <NodeDashboard mode={nodeMode} /> : <AdminDashboard />}
+          </div>
         </ErrorBoundary>
       </>
     );

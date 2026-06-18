@@ -88,7 +88,7 @@ header.app-header {
   box-shadow: 0 2px 18px var(--ft-glass-shadow), inset 0 1px 0 var(--ft-glass-highlight);
   flex-wrap: wrap;
 }
-.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.04em; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.04em; user-select: none; }
 .logo-icon {
   width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
   background: linear-gradient(135deg, var(--ft-accent), var(--ft-info));
@@ -97,6 +97,7 @@ header.app-header {
 .logo-avatar {
   width: 30px; height: 30px; border-radius: 8px; object-fit: cover;
   border: 1px solid var(--ft-border-strong);
+  -webkit-user-drag: none; user-select: none; pointer-events: none;
 }
 .hdr-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .role-pill {
@@ -104,7 +105,13 @@ header.app-header {
   background: var(--ft-accent-soft); color: var(--ft-accent); font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.06em;
 }
-.version { font-family: monospace; font-size: 0.68rem; color: var(--ft-version-text); align-self: flex-end; }
+.version {
+  font-family: monospace; font-size: 0.68rem; color: var(--ft-version-text);
+  align-self: flex-end; cursor: default; transition: color 0.18s;
+}
+/* Hover nudges toward the muted text tone — darker in light themes, lighter in
+   dark/pink themes — without picking a per-theme color. */
+.version:hover { color: var(--ft-text-muted); }
 
 /* ── buttons ── */
 .btn {
@@ -181,11 +188,20 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
   position: fixed; inset: 0; background: var(--ft-overlay);
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
   display: grid; place-items: center; z-index: 200; padding: 20px;
+  animation: ft-overlay-in 0.16s ease both;
 }
+.modal-overlay.is-closing { animation: ft-overlay-in 0.16s ease reverse forwards; }
 .modal {
   background: var(--ft-glass-bg-2); border: 1px solid var(--ft-glass-border);
   border-radius: 16px; width: 100%; max-width: 560px; max-height: 88vh; overflow: auto;
   box-shadow: 0 20px 60px var(--ft-glass-shadow), inset 0 1px 0 var(--ft-glass-highlight);
+  animation: ft-modal-in 0.2s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.modal.is-closing { animation: ft-modal-in 0.16s ease reverse forwards; }
+@keyframes ft-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ft-modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--ft-border); }
 .modal-title { font-weight: 600; font-size: 1.02rem; }
@@ -355,3 +371,31 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 
 /* ── empty state ── */
 .empty { text-align: center; color: var(--ft-text-faint); padding: 48px 22px; }
+
+/* ── motion: view + list entrances ── */
+/* Wraps a remounted view (olcrtc⇄wdtt, role load, instance switch). React drops
+   and recreates the keyed node, so the animation replays on each switch. */
+.view-fade { animation: ft-view-in 0.22s ease both; }
+@keyframes ft-view-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* List rows (instances, WDTT users, tabs). Keys are stable, so only a freshly
+   added row animates on insert — existing rows are untouched. */
+.list-item { animation: ft-item-in 0.22s ease both; }
+@keyframes ft-item-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth color/theme changes: only paint properties transition, so layout and
+   the explicit per-element transitions above keep their own timings (higher
+   specificity wins). */
+*, *::before, *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-fade, .list-item, .modal, .modal-overlay { animation: none; }
+  *, *::before, *::after { transition: none; }
+}

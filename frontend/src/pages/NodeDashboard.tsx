@@ -76,14 +76,14 @@ export function NodeDashboard({ mode }: { mode: "olcrtc" | "wdtt" }) {
         <>
           <div className="tabs">
             {users.map((u) => (
-              <div key={u.id} className={`tab ${u.id === sel ? "active" : ""}`} onClick={() => setSel(u.id)}>
+              <div key={u.id} className={`tab list-item ${u.id === sel ? "active" : ""}`} onClick={() => setSel(u.id)}>
                 <span className={`dot ${u.running ? "dot-on" : "dot-off"}`} style={{ marginRight: 6 }} />
                 {u.carrier}/{u.transport} · {u.id.slice(0, 6)}
               </div>
             ))}
           </div>
           {selected && (
-            <div className="workspace">
+            <div className="workspace view-fade" key={selected.id}>
               <InstancePanel inst={selected} domains={status?.jitsi_domains ?? ""}
                 onAction={act} onRefresh={refresh} />
               <LogView uid={selected.id} />
@@ -251,7 +251,8 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
           onChange={(e) => commit({ max_session_duration: e.target.value }, true)} />
       </div>
       <Switch checked={form.auto_restart} disabled={locked}
-        onChange={(v) => commit({ auto_restart: v })} label="Автозапуск" />
+        onChange={(v) => commit({ auto_restart: v })} label="Автозапуск"
+        title="Автоматически поднимать инстанс при старте панели и перезапускать его, если процесс упал или завершил сессию" />
     </div>
   );
 }

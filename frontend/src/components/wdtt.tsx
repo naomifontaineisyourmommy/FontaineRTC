@@ -42,7 +42,7 @@ export function WdttUsersTable({ users, onToggle, onDelete }: {
       {users.map((u) => {
         const st = STATUS[u.status] ?? { label: u.status, cls: "badge-off" };
         return (
-          <div className="card" key={u.password} style={{ marginBottom: 8, padding: 12 }}>
+          <div className="card list-item" key={u.password} style={{ marginBottom: 8, padding: 12 }}>
             <div className="row-between">
               {u.uri ? (
                 <span className="uri uri-copy" style={{ maxWidth: "60%" }}

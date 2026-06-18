@@ -29,13 +29,20 @@ export function Modal({
   footer?: ReactNode;
   headExtra?: ReactNode;
 }) {
+  // Play a brief exit animation before actually unmounting (React would drop the
+  // node instantly otherwise, making the close feel abrupt).
+  const [closing, setClosing] = useState(false);
+  const close = useCallback(() => {
+    setClosing(true);
+    setTimeout(onClose, 160);
+  }, [onClose]);
   return createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <div className={`modal-overlay ${closing ? "is-closing" : ""}`} onClick={close}>
+      <div className={`modal ${closing ? "is-closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <span className="modal-title">{title}</span>
           {headExtra}
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+          <button className="btn btn-ghost btn-sm" onClick={close}>✕</button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
@@ -111,15 +118,16 @@ export function UpdateOverlay({
 
 /** Liquid-glass switch toggle (drop-in replacement for a checkbox). */
 export function Switch({
-  checked, onChange, label, disabled,
+  checked, onChange, label, disabled, title,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label?: ReactNode;
   disabled?: boolean;
+  title?: string;
 }) {
   return (
-    <label className={`switch ${disabled ? "switch-disabled" : ""}`}>
+    <label className={`switch ${disabled ? "switch-disabled" : ""}`} title={title}>
       <input type="checkbox" checked={checked} disabled={disabled}
         onChange={(e) => onChange(e.target.checked)} />
       <span className="switch-track"><span className="switch-thumb" /></span>

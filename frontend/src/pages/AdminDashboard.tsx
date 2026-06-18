@@ -156,6 +156,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
         </div>
       )}
 
+      <div className="view-fade" key={mode}>
       {mode === "wdtt" ? (
         !wdtt.installed
           ? <div className="faint" style={{ padding: "8px 0" }}>WDTT не установлен на этой ноде.</div>
@@ -184,7 +185,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
       ) : (<>
       {srv.users.length === 0 && <div className="faint" style={{ padding: "8px 0" }}>Нет инстансов.</div>}
       {srv.users.map((u) => (
-        <div className="card" key={u.client_id} style={{ marginBottom: 8, padding: 12 }}>
+        <div className="card list-item" key={u.client_id} style={{ marginBottom: 8, padding: 12 }}>
           <div className="row-between">
             <span className="row" style={{ gap: 8 }}>
               <span className={`dot ${u.running ? "dot-on" : "dot-off"}`} />
@@ -213,6 +214,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
         </div>
       ))}
       </>)}
+      </div>
       {edit && <ServerFormModal groups={groups} server={srv} onClose={() => setEdit(false)}
         onSaved={() => { setEdit(false); onRefresh(); }} />}
       {showAdd && <CreateInstanceModal serverId={srv.id} onClose={() => setShowAdd(false)}
@@ -430,7 +432,8 @@ function InstanceEditModal({ serverId, user, domains, onClose, onSaved }: {
       ))}
       <div className="field"><label>Макс. длительность сессии (напр. 6h)</label>
         <input value={f.max_session_duration} onChange={(e) => set("max_session_duration", e.target.value)} /></div>
-      <Switch checked={!!f.auto_restart} onChange={(v) => set("auto_restart", v)} label="Автозапуск" />
+      <Switch checked={!!f.auto_restart} onChange={(v) => set("auto_restart", v)} label="Автозапуск"
+        title="Автоматически поднимать инстанс при старте панели и перезапускать его, если процесс упал или завершил сессию" />
     </Modal>
   );
 }
