@@ -9,18 +9,20 @@ import { createPortal } from "react-dom";
 // becomes the containing block for position:fixed, which would otherwise clip a
 // nested modal inside its parent.
 export function Modal({
-  title, onClose, children, footer,
+  title, onClose, children, footer, headExtra,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  headExtra?: ReactNode;
 }) {
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <span className="modal-title">{title}</span>
+          {headExtra}
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">{children}</div>
@@ -147,6 +149,22 @@ export function fmtUptime(s: number): string {
   if (!s) return "—";
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
   return h ? `${h}ч ${m}м` : `${m}м`;
+}
+
+/** Two-position segmented toggle (e.g. olcrtc / wdtt). */
+export function ModeToggle({ value, options, onChange }: {
+  value: string;
+  options: { id: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="seg" role="tablist">
+      {options.map((o) => (
+        <button key={o.id} className={`seg-btn ${value === o.id ? "active" : ""}`}
+          onClick={() => onChange(o.id)}>{o.label}</button>
+      ))}
+    </div>
+  );
 }
 
 /** Connected-clients counter with a themed hover popover listing their HWIDs. */

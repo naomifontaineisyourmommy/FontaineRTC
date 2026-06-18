@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api/client";
-import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
+import { Modal, ModeToggle, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
+import { WdttAddForm, WdttUsersTable, type WdttUser } from "../components/wdtt";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 import { COUNTRIES, isKnownCountry } from "../lib/countries";
 
@@ -16,6 +17,7 @@ interface Server {
   group_id: number; group_name: string; online: boolean; cpu: number; ram: number;
   active_users: number; total_users: number; clients_online: number; push_active: boolean;
   jitsi_domains: string; users: VUser[];
+  wdtt?: { installed: boolean; active: boolean; version: string; main_password: string; users: WdttUser[] };
 }
 interface Group { id: number; name: string; }
 interface Data { servers: Server[]; groups: Group[]; tg_bot_token: string; tg_recipients: string; }
@@ -132,13 +134,18 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
   const [edit, setEdit] = useState(false);
   const [editInst, setEditInst] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [mode, setMode] = useState<"olcrtc" | "wdtt">("olcrtc");
   const toast = useToast();
   const node = (action: string, body: object) => apiPost(`/api/node/${action}`, { server_id: srv.id, ...body });
   const anyStopped = srv.users.some((u) => !u.running);
   const anyRunning = srv.users.some((u) => u.running);
+  const wdtt = srv.wdtt || { installed: false, active: false, version: "", main_password: "", users: [] };
 
   return (
     <Modal title={`${srv.name} · ${srv.country}`} onClose={onClose}
+      headExtra={<ModeToggle value={mode}
+        options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}
+        onChange={(v) => setMode(v as "olcrtc" | "wdtt")} />}
       footer={<>
         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)}>✎ Изменить</button>
         <button className="btn btn-ghost btn-sm" onClick={async () => {
@@ -147,16 +154,46 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
             toast.push(r.up_to_date ? "Последняя версия уже установлена" : "Обновление ноды запущено");
           } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
         }}>↺ Обновить</button>
-        <button className="btn btn-success btn-sm" disabled={!anyStopped} onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
-        <button className="btn btn-danger btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
-        <button className="btn btn-warning btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>
+        {mode === "olcrtc" && <>
+          <button className="btn btn-success btn-sm" disabled={!anyStopped} onClick={() => onAction(() => node("start-all", {}), "Запуск всех")}>▶ Все</button>
+          <button className="btn btn-danger btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("stop-all", {}), "Остановка всех")}>■ Все</button>
+          <button className="btn btn-warning btn-sm" disabled={!anyRunning} onClick={() => onAction(() => node("restart-all", {}), "Перезапуск всех")}>↺ Все</button>
+        </>}
       </>}>
       <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <span className={`badge ${srv.online ? "badge-on" : "badge-off"}`}>{srv.online ? "online" : "offline"}</span>
         <span className="muted">CPU {srv.cpu}% · RAM {srv.ram}%</span>
         <span className="muted"><Peers count={srv.clients_online} devices={srv.users.flatMap((u) => u.peers_devices ?? [])} /></span>
-        <button className="btn btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAdd(true)}>＋ Инстанс</button>
+        {mode === "olcrtc" && <button className="btn btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAdd(true)}>＋ Инстанс</button>}
       </div>
+
+      {mode === "wdtt" ? (
+        !wdtt.installed
+          ? <div className="faint" style={{ padding: "8px 0" }}>WDTT не установлен на этой ноде.</div>
+          : <>
+            <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+              <span className={`badge ${wdtt.active ? "badge-on" : "badge-off"}`}>
+                {wdtt.active ? "сервис активен" : "не активен"}
+              </span>
+              <span className="muted">версия: {wdtt.version || "?"}</span>
+              {wdtt.main_password && (
+                <span className="muted">главный:{" "}
+                  <span className="uri uri-copy" style={{ padding: "2px 6px" }}
+                    onClick={() => { copy(wdtt.main_password); toast.push("Главный пароль скопирован"); }}>
+                    {wdtt.main_password}
+                  </span>
+                </span>
+              )}
+            </div>
+            <WdttAddForm onAdd={(p) => onAction(() => node("wdtt-add", p), "Пользователь добавлен")} />
+            <WdttUsersTable
+              users={wdtt.users}
+              onToggle={(u) => onAction(() => node("wdtt-toggle",
+                { password: u.password, deactivated: u.status !== "deactivated" }), "Готово")}
+              onDelete={(u) => onAction(() => node("wdtt-del", { password: u.password }), "Удалён")}
+            />
+          </>
+      ) : (<>
       {srv.users.length === 0 && <div className="faint" style={{ padding: "8px 0" }}>Нет инстансов.</div>}
       {srv.users.map((u) => (
         <div className="card" key={u.client_id} style={{ marginBottom: 8, padding: 12 }}>
@@ -187,6 +224,7 @@ function ServerModal({ srv, groups, onClose, onAction, onRefresh }: {
           </div>
         </div>
       ))}
+      </>)}
       {edit && <ServerFormModal groups={groups} server={srv} onClose={() => setEdit(false)}
         onSaved={() => { setEdit(false); onRefresh(); }} />}
       {showAdd && <CreateInstanceModal serverId={srv.id} onClose={() => setShowAdd(false)}

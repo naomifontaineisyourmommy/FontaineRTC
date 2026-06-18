@@ -3,6 +3,7 @@ import { apiGet, apiPost, sseUrl } from "../api/client";
 import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 import { highlightLine } from "../lib/logHighlight";
+import { WdttPanel } from "./WdttPanel";
 
 interface Instance {
   id: string; carrier: string; transport: string; running: boolean;
@@ -18,7 +19,7 @@ interface Status {
   jitsi_domains: string;
 }
 
-export function NodeDashboard() {
+export function NodeDashboard({ mode }: { mode: "olcrtc" | "wdtt" }) {
   const [status, setStatus] = useState<Status | null>(null);
   const [sel, setSel] = useState<string>("");
   const [showAdd, setShowAdd] = useState(false);
@@ -48,6 +49,8 @@ export function NodeDashboard() {
   const selected = users.find((u) => u.id === sel);
   const anyStopped = users.some((u) => !u.running);
   const anyRunning = users.some((u) => u.running);
+
+  if (mode === "wdtt") return <WdttPanel />;
 
   return (
     <>

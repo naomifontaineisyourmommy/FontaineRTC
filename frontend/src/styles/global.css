@@ -251,6 +251,20 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 }
 @keyframes ft-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+/* ── segmented toggle (olcrtc / wdtt) ── */
+.seg {
+  display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+  background: var(--ft-glass-bg-2); border: 1px solid var(--ft-glass-border);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.seg-btn {
+  padding: 5px 16px; border: none; background: transparent; color: var(--ft-text-muted);
+  border-radius: 999px; cursor: pointer; font-size: 0.82rem; font-weight: 600;
+  font-family: inherit; transition: background 0.15s, color 0.15s;
+}
+.seg-btn.active { background: var(--ft-accent); color: var(--ft-text-on-accent); }
+.seg-btn:hover:not(.active) { color: var(--ft-text); }
+
 /* ── glass switch toggle ── */
 .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
 .switch > input { position: absolute; opacity: 0; width: 0; height: 0; }

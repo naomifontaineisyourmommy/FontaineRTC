@@ -5,7 +5,7 @@ import { Login } from "./pages/Login";
 import { NodeDashboard } from "./pages/NodeDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ThemeControls } from "./theme/ThemeControls";
-import { Modal, UpdateOverlay, useToast } from "./components/ui";
+import { Modal, ModeToggle, UpdateOverlay, useToast } from "./components/ui";
 
 type Role = "node" | "admin";
 type AuthState = "checking" | "needed" | "ok";
@@ -13,14 +13,15 @@ type AuthState = "checking" | "needed" | "ok";
 interface UpdState { show: boolean; step: string; index: number; total: number; error: string; }
 const NO_UPD: UpdState = { show: false, step: "", index: 0, total: 4, error: "" };
 
-interface Ver { current: string; latest: string; binary: string; binary_latest: string; }
+interface Ver { current: string; latest: string; binary: string; binary_latest: string; wdtt: string; }
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [auth, setAuth] = useState<AuthState>("checking");
   const [upd, setUpd] = useState<UpdState>(NO_UPD);
-  const [ver, setVer] = useState<Ver>({ current: "", latest: "", binary: "", binary_latest: "" });
+  const [ver, setVer] = useState<Ver>({ current: "", latest: "", binary: "", binary_latest: "", wdtt: "" });
   const [prompt, setPrompt] = useState(false);
+  const [nodeMode, setNodeMode] = useState<"olcrtc" | "wdtt">("olcrtc");
   const wasUpdating = useRef(false);
   const toast = useToast();
 
@@ -47,6 +48,7 @@ export default function App() {
         setVer({
           current: d.current || "", latest: d.latest || "",
           binary: d.binary || "", binary_latest: d.binary_latest || "",
+          wdtt: (d.wdtt && d.wdtt.version) || "",
         });
         if (d.update_available) setPrompt(true);
       })
@@ -130,13 +132,19 @@ export default function App() {
             <span className="role-pill">{role}</span>
             {ver.current && <span className="version" title="Версия FontaineRTC">{ver.current}</span>}
             {ver.binary && <span className="version" title="Версия OlcRTC">{ver.binary}</span>}
+            {role === "node" && ver.wdtt && <span className="version" title="Версия WDTT">{ver.wdtt}</span>}
           </div>
+          {role === "node" && (
+            <ModeToggle value={nodeMode}
+              options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}
+              onChange={(v) => setNodeMode(v as "olcrtc" | "wdtt")} />
+          )}
           <div className="hdr-actions">
             <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
             <button className="btn btn-ghost" onClick={logout}>Выйти</button>
           </div>
         </header>
-        {role === "node" ? <NodeDashboard /> : <AdminDashboard />}
+        {role === "node" ? <NodeDashboard mode={nodeMode} /> : <AdminDashboard />}
       </>
     );
   }
