@@ -17,8 +17,9 @@ config.json
 users.json
 .env
 
-# olcrtc binary (provided per-host, amd64)
+# olcrtc binary (provided per-host, amd64) + its recorded version
 olcrtc-linux-amd64
+olcrtc-linux-amd64.version
 
 # Node / frontend
 node_modules/

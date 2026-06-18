@@ -26,9 +26,10 @@ RESTART_CMD = os.environ.get("FONTAINE_RESTART_CMD", "systemctl restart fontaine
 
 _UA = {"User-Agent": "FontaineRTC-updater"}
 
-# cache the latest remote commit briefly to avoid hammering the GitHub API
+# cache the latest remote commit/tag briefly to avoid hammering the GitHub API
 _LATEST_TTL = 300.0
 _latest_cache: dict = {"sha": "", "at": 0.0}
+_bin_cache: dict = {"tag": "", "at": 0.0}
 
 
 def _api(url: str, timeout: int = 15) -> object:
@@ -50,8 +51,13 @@ def binary_download_url(repo: str = BINARY_REPO) -> tuple[str, str]:
     raise RuntimeError(f"asset {BINARY_ASSET} not found in latest release {rel.get('tag_name')}")
 
 
+def _version_file(dest: Path) -> Path:
+    return dest.with_name(dest.name + ".version")
+
+
 def download_binary(dest: Path, repo: str = BINARY_REPO) -> str:
-    """Download the latest olcrtc binary to `dest` (atomic, chmod +x). Returns tag."""
+    """Download the latest olcrtc binary to `dest` (atomic, chmod +x). Returns tag
+    and records it in a sidecar <binary>.version file (the installed binary version)."""
     url, tag = binary_download_url(repo)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".tmp")
@@ -60,7 +66,34 @@ def download_binary(dest: Path, repo: str = BINARY_REPO) -> str:
         shutil.copyfileobj(r, f)
     tmp.chmod(tmp.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
     tmp.replace(dest)
+    try:
+        _version_file(dest).write_text(tag)
+    except Exception:
+        pass
     return tag
+
+
+def binary_version() -> str:
+    """Installed olcrtc binary version (from the sidecar file), '' if unknown."""
+    try:
+        return _version_file(install_dir() / BINARY_ASSET).read_text().strip()
+    except Exception:
+        return ""
+
+
+def latest_binary_tag() -> str:
+    """Newest olcrtc release tag (cached briefly)."""
+    now = time.time()
+    if _bin_cache["tag"] and now - _bin_cache["at"] < _LATEST_TTL:
+        return _bin_cache["tag"]
+    try:
+        _, tag = binary_download_url()
+    except Exception:
+        tag = ""
+    if tag and tag != "latest":
+        _bin_cache.update(tag=tag, at=now)
+        return tag
+    return _bin_cache["tag"]
 
 
 def install_dir() -> Path:
@@ -174,17 +207,37 @@ def latest_commit() -> str:
     return sha or _latest_cache["sha"]
 
 
-def is_up_to_date() -> bool:
-    """True only when we can confirm the installed commit == the latest commit.
-    Unknown latest (offline) -> False, so an explicit update is still allowed."""
+def _panel_up_to_date() -> bool:
     cur, lat = current_commit(), latest_commit()
     return bool(cur and lat and cur == lat)
 
 
-def version_info() -> dict:
+def _binary_up_to_date() -> bool:
+    cur, lat = binary_version(), latest_binary_tag()
+    return bool(cur and lat and cur == lat)
+
+
+def is_up_to_date(check_binary: bool = False) -> bool:
+    """True only when everything checked is confirmed at the latest version.
+    Anything unknown (offline) -> False, so an explicit update stays allowed."""
+    if not _panel_up_to_date():
+        return False
+    if check_binary and not _binary_up_to_date():
+        return False
+    return True
+
+
+def version_info(check_binary: bool = False) -> dict:
     cur, lat = current_commit(), latest_commit()
-    return {
+    panel_upd = bool(cur and lat and cur != lat)
+    info = {
         "current": cur[:7] if cur else "unknown",
         "latest": lat[:7] if lat else "",
-        "update_available": bool(cur and lat and cur != lat),
+        "update_available": panel_upd,
     }
+    if check_binary:
+        bcur, blat = binary_version(), latest_binary_tag()
+        info["binary"] = bcur or "unknown"
+        info["binary_latest"] = blat or ""
+        info["update_available"] = panel_upd or bool(bcur and blat and bcur != blat)
+    return info

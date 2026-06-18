@@ -132,7 +132,7 @@ async def self_update(request: Request) -> Response:
     if not _authed(request):
         return _ok({"error": "Unauthorized"}, 401)
     from .. import updater
-    if updater.is_up_to_date():
+    if updater.is_up_to_date(check_binary=True):
         return _ok({"ok": True, "up_to_date": True, "message": "Последняя версия уже установлена"})
     ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True)
     return _ok({"ok": ok, "up_to_date": False, "message": msg})
@@ -147,7 +147,7 @@ async def updating(request: Request) -> Response:
 @router.get("/api/version")
 async def version(request: Request) -> Response:
     from .. import updater
-    return _ok(updater.version_info())
+    return _ok(updater.version_info(check_binary=True))
 
 
 @router.get("/api/genkey")
@@ -351,7 +351,7 @@ async def api_v1(request: Request) -> Response:
         return _enc(ak, {"ok": True})
     if action == "update_panel":
         from .. import updater
-        if updater.is_up_to_date():
+        if updater.is_up_to_date(check_binary=True):
             return _enc(ak, {"ok": True, "up_to_date": True,
                              "message": "Последняя версия уже установлена"})
         ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True)

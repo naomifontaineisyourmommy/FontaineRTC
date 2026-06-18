@@ -18,6 +18,7 @@ export default function App() {
   const [auth, setAuth] = useState<AuthState>("checking");
   const [upd, setUpd] = useState<UpdState>(NO_UPD);
   const [version, setVersion] = useState("");
+  const [binary, setBinary] = useState("");
   const wasUpdating = useRef(false);
   const toast = useToast();
 
@@ -42,6 +43,7 @@ export default function App() {
       .then((r) => r.json())
       .then((d) => {
         setVersion(d.current || "");
+        setBinary(d.binary || "");
         if (d.update_available) toast.push("Доступно обновление");
       })
       .catch(() => {});
@@ -91,7 +93,8 @@ export default function App() {
           <div className="logo">
             <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
             <span className="role-pill">{role}</span>
-            {version && <span className="version">{version}</span>}
+            {version && <span className="version" title="Версия FontaineRTC">{version}</span>}
+            {binary && <span className="version" title="Версия OlcRTC">{binary}</span>}
           </div>
           <div className="hdr-actions">
             <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
