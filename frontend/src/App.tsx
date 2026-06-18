@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { apiGet, clearToken, getRole } from "./api/client";
+import { apiGet, apiPost, clearToken, getRole } from "./api/client";
 import { ApiError } from "./api/client";
 import { Login } from "./pages/Login";
 import { NodeDashboard } from "./pages/NodeDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ThemeControls } from "./theme/ThemeControls";
-import { UpdateOverlay, useToast } from "./components/ui";
+import { Modal, UpdateOverlay, useToast } from "./components/ui";
 
 type Role = "node" | "admin";
 type AuthState = "checking" | "needed" | "ok";
@@ -13,12 +13,14 @@ type AuthState = "checking" | "needed" | "ok";
 interface UpdState { show: boolean; step: string; index: number; total: number; error: string; }
 const NO_UPD: UpdState = { show: false, step: "", index: 0, total: 4, error: "" };
 
+interface Ver { current: string; latest: string; binary: string; binary_latest: string; }
+
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [auth, setAuth] = useState<AuthState>("checking");
   const [upd, setUpd] = useState<UpdState>(NO_UPD);
-  const [version, setVersion] = useState("");
-  const [binary, setBinary] = useState("");
+  const [ver, setVer] = useState<Ver>({ current: "", latest: "", binary: "", binary_latest: "" });
+  const [prompt, setPrompt] = useState(false);
   const wasUpdating = useRef(false);
   const toast = useToast();
 
@@ -37,17 +39,19 @@ export default function App() {
       .catch(() => setRole(null));
   }, []);
 
-  // version + "update available" check, once on open
+  // One-time version check on page load — prompt with a modal if behind.
   useEffect(() => {
     fetch("/api/version")
       .then((r) => r.json())
       .then((d) => {
-        setVersion(d.current || "");
-        setBinary(d.binary || "");
-        if (d.update_available) toast.push("Доступно обновление");
+        setVer({
+          current: d.current || "", latest: d.latest || "",
+          binary: d.binary || "", binary_latest: d.binary_latest || "",
+        });
+        if (d.update_available) setPrompt(true);
       })
       .catch(() => {});
-  }, [toast]);
+  }, []);
 
   // Poll update status — also catches updates triggered externally via the API
   // (the node case, when the admin panel pushes update_panel).
@@ -63,11 +67,9 @@ export default function App() {
           wasUpdating.current = false;
           setUpd((u) => ({ ...u, show: true, error: d.error }));
         } else if (wasUpdating.current) {
-          // update finished and the service is back up — reload to get new assets
           window.location.reload();
         }
       } catch {
-        // server unreachable (likely restarting) — keep the overlay if we were updating
         if (wasUpdating.current) setUpd((u) => ({ ...u, show: true }));
       }
     };
@@ -76,9 +78,42 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
+  const startUpdate = async () => {
+    setPrompt(false);
+    try {
+      const r = await apiPost("/api/update");
+      if (r.up_to_date) toast.push("Последняя версия уже установлена");
+      // otherwise the overlay appears via the /api/updating poll
+    } catch (e) {
+      toast.push(e instanceof Error ? e.message : "Ошибка", false);
+    }
+  };
+
   const overlay = upd.show ? (
     <UpdateOverlay step={upd.step} index={upd.index} total={upd.total} error={upd.error}
       onClose={() => setUpd(NO_UPD)} />
+  ) : null;
+
+  const updatePrompt = (prompt && !upd.show) ? (
+    <Modal title="Доступно обновление" onClose={() => setPrompt(false)}
+      footer={<>
+        <button className="btn btn-ghost" onClick={() => setPrompt(false)}>Закрыть</button>
+        <button className="btn" onClick={startUpdate}>Обновить</button>
+      </>}>
+      <p className="muted" style={{ marginBottom: 12 }}>Доступна новая версия. Обновить сейчас?</p>
+      {ver.current !== ver.latest && ver.latest && (
+        <div className="row-between" style={{ marginBottom: 6 }}>
+          <span className="muted">FontaineRTC</span>
+          <span><code>{ver.current}</code> → <code>{ver.latest}</code></span>
+        </div>
+      )}
+      {ver.binary && ver.binary_latest && ver.binary !== ver.binary_latest && (
+        <div className="row-between">
+          <span className="muted">OlcRTC</span>
+          <span><code>{ver.binary}</code> → <code>{ver.binary_latest}</code></span>
+        </div>
+      )}
+    </Modal>
   ) : null;
 
   let content;
@@ -93,8 +128,8 @@ export default function App() {
           <div className="logo">
             <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
             <span className="role-pill">{role}</span>
-            {version && <span className="version" title="Версия FontaineRTC">{version}</span>}
-            {binary && <span className="version" title="Версия OlcRTC">{binary}</span>}
+            {ver.current && <span className="version" title="Версия FontaineRTC">{ver.current}</span>}
+            {ver.binary && <span className="version" title="Версия OlcRTC">{ver.binary}</span>}
           </div>
           <div className="hdr-actions">
             <ThemeControls onToast={(m, ok) => toast.push(m, ok)} />
@@ -106,5 +141,5 @@ export default function App() {
     );
   }
 
-  return <>{overlay}{content}</>;
+  return <>{overlay}{updatePrompt}{content}</>;
 }
