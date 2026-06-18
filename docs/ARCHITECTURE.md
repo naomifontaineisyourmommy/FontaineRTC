@@ -1,9 +1,5 @@
 # FontaineRTC — Архитектура
 
-FontaineRTC объединяет две панели управления [OlcRTC](https://github.com/openlibrecommunity/olcrtc)
-в одну кодовую базу с двумя режимами работы (`role = node | admin`).
-
----
 
 ## 1. Один код, два режима
 
@@ -12,7 +8,7 @@ FontaineRTC объединяет две панели управления [OlcRT
 | Роль    | Что делает                                                                |
 |:--------|:--------------------------------------------------------------------------|
 | `node`  | Управляет локальными `olcrtc`-процессами и сервисом WDTT на этом VPS.      |
-| `admin` | Мониторит и удалённо управляет нодами (push + поллинг), TG-алерты, группы. |
+| `admin` | Мониторит и удалённо управляет нодами (push + поллинг), TG-алерты об ошибках, группы. |
 
 Один backend-пакет `fontaine`. `app.py` по роли монтирует нужный роутер
 (`node/router.py` или `admin/router.py`) и поднимает фоновые воркеры. Общее ядро
@@ -149,10 +145,3 @@ WDTT — VPN на базе WireGuard, трафик которого замаск
 - **Жизненный цикл**: install/update/uninstall обрабатывают FontaineRTC + olcrtc +
   WDTT вместе; WDTT переустанавливается при обновлении только если вышел новый тег.
 
----
-
-## Благодарности
-
-Логика портирована с панелей [tankionline2005](https://github.com/tankionline2005)
-(**OlcRTC-VPS** и **OlcRTC-AdminVPS**). Серверная часть WDTT —
-[amurcanov/proxy-turn-vk-android](https://github.com/amurcanov/proxy-turn-vk-android).
