@@ -132,9 +132,15 @@ def self_update(install_dir: Path, fetch_binary: bool = True, progress=None) -> 
             progress(i, s)
 
     p(1, "Обновление кода…")
-    ok, out = _run(["git", "pull", "--ff-only"], cwd=install_dir)
+    # Repo is the source of truth — fetch + hard reset so locally regenerated files
+    # (e.g. setuptools build/) can never block the update. Ignored data/.env/config
+    # are untracked and stay untouched.
+    ok, out = _run(["git", "fetch", "origin", PANEL_BRANCH], cwd=install_dir)
     if not ok:
-        return False, f"git pull: {out}"
+        return False, f"git fetch: {out}"
+    ok, out = _run(["git", "reset", "--hard", f"origin/{PANEL_BRANCH}"], cwd=install_dir)
+    if not ok:
+        return False, f"git reset: {out}"
 
     pip = install_dir / ".venv" / "bin" / "pip"
     if pip.exists():

@@ -10,6 +10,7 @@ set -euo pipefail
 
 INSTALL_DIR="${FONTAINE_INSTALL_DIR:-/opt/fontaine}"
 SERVICE="fontaine"
+BRANCH="${FONTAINE_BRANCH:-master}"
 BINARY_NAME="olcrtc-linux-amd64"
 
 say() { printf '\033[1;36m>>\033[0m %s\n' "$*"; }
@@ -17,7 +18,10 @@ say() { printf '\033[1;36m>>\033[0m %s\n' "$*"; }
 [ -d "$INSTALL_DIR/.git" ] || { echo "FontaineRTC not found in $INSTALL_DIR — run install.sh first"; exit 1; }
 
 say "Pulling latest code"
-git -C "$INSTALL_DIR" pull --ff-only
+# Hard reset to the remote — the repo is authoritative; locally regenerated files
+# (e.g. setuptools build/) must not block updates. Ignored data/.env stay untouched.
+git -C "$INSTALL_DIR" fetch origin "$BRANCH"
+git -C "$INSTALL_DIR" reset --hard "origin/$BRANCH"
 
 say "Reinstalling backend"
 "$INSTALL_DIR/.venv/bin/pip" install -q "$INSTALL_DIR/backend"

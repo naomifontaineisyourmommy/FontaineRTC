@@ -39,9 +39,11 @@ else
 fi
 
 # ── fetch / update source ──
+BRANCH="${FONTAINE_BRANCH:-master}"
 if [ -d "$INSTALL_DIR/.git" ]; then
   say "Updating existing checkout"
-  git -C "$INSTALL_DIR" pull --ff-only
+  git -C "$INSTALL_DIR" fetch origin "$BRANCH"
+  git -C "$INSTALL_DIR" reset --hard "origin/$BRANCH"
 else
   say "Cloning repository"
   mkdir -p "$(dirname "$INSTALL_DIR")"
