@@ -23,8 +23,11 @@ from ..core import crypto, security
 from ..core.compat import COMPAT_SET
 from . import instance as inst
 from . import sysinfo
+from .wdtt import installer as wdtt_installer
+from .wdtt.manager import WdttManager
 
 router = APIRouter(tags=["node"])
+_wdtt = WdttManager()
 
 # config keys the settings UI may change
 _CONFIG_EDITABLE = {
@@ -434,3 +437,69 @@ async def log_download_all(request: Request) -> Response:
     fname = f'olcrtc-all-{time.strftime("%Y-%m-%d-%H-%M-%S")}.zip'
     return Response(content=buf.getvalue(), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+
+
+# ── WDTT subsystem (second protocol) ───────────────────────────────────────────
+@router.get("/api/wdtt")
+async def wdtt_overview(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    return _ok({**_wdtt.status(), "users": _wdtt.list_users(),
+                "version": wdtt_installer.version_info()})
+
+
+@router.get("/api/wdtt/installing")
+async def wdtt_installing(request: Request) -> Response:
+    return _ok(wdtt_installer.install_status())
+
+
+@router.post("/api/wdtt/users/add")
+async def wdtt_add(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    d = await _json_body(request)
+    try:
+        res = _wdtt.add_user(days=int(d.get("days", 30)), password=str(d.get("password", "")),
+                             host=str(d.get("host", "")), vk_hash=str(d.get("vk_hash", "")))
+    except ValueError as e:
+        return _ok({"error": str(e)}, 400)
+    return _ok({"ok": True, **res})
+
+
+@router.post("/api/wdtt/users/delete")
+async def wdtt_del(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    pw = str((await _json_body(request)).get("password", ""))
+    return _ok({"ok": True} if _wdtt.del_user(pw) else {"error": "not found"})
+
+
+@router.post("/api/wdtt/users/toggle")
+async def wdtt_toggle(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    d = await _json_body(request)
+    ok = _wdtt.set_deactivated(str(d.get("password", "")), bool(d.get("deactivated")))
+    return _ok({"ok": True} if ok else {"error": "not found"})
+
+
+@router.post("/api/wdtt/install")
+async def wdtt_install(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    d = await _json_body(request)
+    from .wdtt.manager import gen_password
+    main_pw = str(d.get("main_password", "")).strip() or gen_password()
+    ok, msg = wdtt_installer.start_install(
+        dtls_port=int(d.get("dtls_port", 56000)), wg_port=int(d.get("wg_port", 56001)),
+        ssh_port=int(d.get("ssh_port", 22)), main_password=main_pw,
+        dns=str(d.get("dns", "1.1.1.1")))
+    return _ok({"ok": ok, "message": msg, "main_password": main_pw if ok else ""})
+
+
+@router.post("/api/wdtt/uninstall")
+async def wdtt_uninstall(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    ok, msg = wdtt_installer.start_uninstall()
+    return _ok({"ok": ok, "message": msg})

@@ -38,17 +38,22 @@ def _api(url: str, timeout: int = 15) -> object:
         return json.loads(r.read().decode())
 
 
-def binary_download_url(repo: str = BINARY_REPO) -> tuple[str, str]:
-    """Return (url, tag) for the newest release's olcrtc binary (prereleases included)."""
+def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
+    """Return (download_url, tag) for `asset_name` in the newest release of `repo`
+    (prereleases included). Falls back to the conventional latest/download path."""
     releases = _api(f"https://api.github.com/repos/{repo}/releases")
     if not isinstance(releases, list) or not releases:
-        # Fallback: the conventional 'latest' asset path (non-prerelease only).
-        return (f"https://github.com/{repo}/releases/latest/download/{BINARY_ASSET}", "latest")
+        return (f"https://github.com/{repo}/releases/latest/download/{asset_name}", "latest")
     rel = releases[0]  # GitHub returns releases newest-first
     for asset in rel.get("assets", []):
-        if asset.get("name") == BINARY_ASSET:
+        if asset.get("name") == asset_name:
             return asset["browser_download_url"], rel.get("tag_name", "?")
-    raise RuntimeError(f"asset {BINARY_ASSET} not found in latest release {rel.get('tag_name')}")
+    raise RuntimeError(f"asset {asset_name} not found in latest release {rel.get('tag_name')}")
+
+
+def binary_download_url(repo: str = BINARY_REPO) -> tuple[str, str]:
+    """(url, tag) for the newest olcrtc binary release."""
+    return release_asset_url(repo, BINARY_ASSET)
 
 
 def _version_file(dest: Path) -> Path:
