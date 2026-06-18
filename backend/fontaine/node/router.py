@@ -13,6 +13,8 @@ import collections
 import io
 import json
 import secrets
+import subprocess
+import threading
 import time
 import zipfile
 
@@ -569,3 +571,58 @@ async def wdtt_uninstall(request: Request) -> Response:
         return _ok({"error": "Unauthorized"}, 401)
     ok, msg = wdtt_installer.start_uninstall()
     return _ok({"ok": ok, "message": msg})
+
+
+_JOURNAL = ["journalctl", "-u", "wdtt", "--no-pager", "-o", "cat"]
+
+
+@router.get("/api/wdtt/logs/stream", response_model=None)
+async def wdtt_logs_stream(request: Request):
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    try:
+        proc = subprocess.Popen([*_JOURNAL, "-n", "200", "-f"],
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, bufsize=1)
+    except Exception as e:
+        return _ok({"error": str(e)}, 500)
+    q: collections.deque = collections.deque(maxlen=2000)
+    threading.Thread(target=lambda: [q.append(ln.rstrip("\n")) for ln in proc.stdout],
+                     daemon=True).start()
+
+    async def gen():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                if proc.poll() is not None and not q:
+                    break
+                drained = False
+                while q:
+                    yield f"data: {q.popleft()}\n\n"
+                    drained = True
+                if not drained:
+                    yield "data: :ka\n\n"
+                await asyncio.sleep(0.4)
+        finally:
+            try:
+                proc.terminate()
+            except Exception:
+                pass
+
+    return StreamingResponse(gen(), media_type="text/event-stream",
+                             headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"})
+
+
+@router.get("/api/wdtt/logs/download")
+async def wdtt_logs_download(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    try:
+        p = subprocess.run([*_JOURNAL, "-n", "5000"], capture_output=True, text=True)
+        data = (p.stdout or p.stderr or "").encode("utf-8")
+    except Exception as e:
+        data = str(e).encode("utf-8")
+    fname = f'wdtt-{time.strftime("%Y-%m-%d-%H-%M-%S")}.log'
+    return Response(content=data, media_type="text/plain",
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"'})

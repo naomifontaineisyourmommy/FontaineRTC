@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { apiGet, apiPost } from "../api/client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { apiGet, apiPost, sseUrl } from "../api/client";
 import { copy, useToast } from "../components/ui";
 import { WdttAddForm, WdttUsersTable, type WdttUser } from "../components/wdtt";
+import { highlightLine } from "../lib/logHighlight";
 
 interface WdttData {
   installed: boolean;
@@ -9,7 +10,38 @@ interface WdttData {
   version: string;
   main_password: string;
   users: WdttUser[];
-  ports?: { dtls: number; wg: number; tun: number };
+}
+
+function WdttLogView() {
+  const [lines, setLines] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const es = new EventSource(sseUrl("/api/wdtt/logs/stream"));
+    es.onmessage = (ev) => {
+      setLoading(false);
+      if (ev.data === ":ka") return;
+      setLines((l) => [...l.slice(-1000), ev.data]);
+    };
+    return () => es.close();
+  }, []);
+  useEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight; }, [lines]);
+  if (loading) {
+    return (
+      <div className="log" ref={box}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div key={i} className="sk-line" style={{ width: `${40 + ((i * 23) % 55)}%` }} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="log" ref={box}
+      dangerouslySetInnerHTML={{
+        __html: lines.length ? lines.map(highlightLine).join("")
+          : '<span class="faint">Логи WDTT появятся здесь…</span>',
+      }} />
+  );
 }
 
 export function WdttPanel() {
@@ -52,35 +84,35 @@ export function WdttPanel() {
   }
 
   return (
-    <div style={{ padding: "16px 22px" }}>
-      <div className="row-between" style={{ marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-        <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
-          <span className={`badge ${d.active ? "badge-on" : "badge-off"}`}>
-            {d.active ? "WDTT активен" : "WDTT не активен"}
-          </span>
-          {d.main_password && (
-            <span className="muted">Главный пароль{" "}
-              <span className="uri uri-copy" style={{ padding: "2px 6px" }}
-                title="Скопировать главный пароль"
-                onClick={() => { copy(d.main_password); toast.push("Главный пароль скопирован"); }}>
-                {d.main_password}
-              </span>
+    <div className="wdtt-layout">
+      <div>
+        <div className="row-between" style={{ marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+          <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
+            <span className={`badge ${d.active ? "badge-on" : "badge-off"}`}>
+              {d.active ? "WDTT активен" : "WDTT не активен"}
             </span>
-          )}
+            {d.main_password && (
+              <span className="muted">Главный пароль{" "}
+                <span className="uri uri-copy" style={{ padding: "2px 6px" }}
+                  title="Скопировать главный пароль"
+                  onClick={() => { copy(d.main_password); toast.push("Главный пароль скопирован"); }}>
+                  {d.main_password}
+                </span>
+              </span>
+            )}
+          </div>
+          <a className="btn btn-ghost btn-sm" href={sseUrl("/api/wdtt/logs/download")}>⬇ Скачать логи</a>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => {
-          if (confirm("Переустановить/обновить WDTT до последней версии?"))
-            act(() => apiPost("/api/wdtt/install", {}), "Переустановка WDTT запущена");
-        }}>↺ Переустановить</button>
-      </div>
 
-      <WdttAddForm onAdd={addUser} />
-      <WdttUsersTable
-        users={d.users}
-        onToggle={(u) => act(() => apiPost("/api/wdtt/users/toggle",
-          { password: u.password, deactivated: u.status !== "deactivated" }), "Готово")}
-        onDelete={(u) => act(() => apiPost("/api/wdtt/users/delete", { password: u.password }), "Удалён")}
-      />
+        <WdttAddForm onAdd={addUser} />
+        <WdttUsersTable
+          users={d.users}
+          onToggle={(u) => act(() => apiPost("/api/wdtt/users/toggle",
+            { password: u.password, deactivated: u.status !== "deactivated" }), "Готово")}
+          onDelete={(u) => act(() => apiPost("/api/wdtt/users/delete", { password: u.password }), "Удалён")}
+        />
+      </div>
+      <WdttLogView />
     </div>
   );
 }

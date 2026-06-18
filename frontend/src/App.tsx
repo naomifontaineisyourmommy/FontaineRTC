@@ -131,9 +131,12 @@ export default function App() {
             <img className="logo-avatar" src="/naomi.jpg" alt="" /> FontaineRTC
             <span className="role-pill">{role}</span>
             {ver.current && <span className="version" title="Версия FontaineRTC">{ver.current}</span>}
-            {ver.binary && <span className="version" title="Версия OlcRTC">{ver.binary}</span>}
+            {ver.binary && <span className="version" title="Версия OlcRTC-AdvancedInteractive">{ver.binary}</span>}
             {role === "node" && ver.wdtt && <span className="version" title="Версия WDTT">{ver.wdtt}</span>}
           </div>
+          {role === "node" && (
+            <button className="btn btn-ghost btn-sm" onClick={startUpdate}>↺ Обновить</button>
+          )}
           {role === "node" && (
             <ModeToggle value={nodeMode}
               options={[{ id: "olcrtc", label: "olcrtc" }, { id: "wdtt", label: "wdtt" }]}

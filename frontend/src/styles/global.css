@@ -223,6 +223,8 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 .tab.active { background: var(--ft-surface-2); color: var(--ft-text); border-color: var(--ft-accent); }
 .workspace { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 16px 22px; }
 @media (max-width: 820px) { .workspace { grid-template-columns: 1fr; } }
+.wdtt-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 22px; align-items: start; }
+@media (max-width: 820px) { .wdtt-layout { grid-template-columns: 1fr; } }
 
 /* ── log viewer ── */
 .log {

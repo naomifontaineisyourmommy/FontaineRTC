@@ -65,15 +65,7 @@ export function NodeDashboard({ mode }: { mode: "olcrtc" | "wdtt" }) {
             onClick={() => act(() => apiPost("/api/users/restart-all"), "Перезапуск всех")}>↺</button>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          <a className="btn btn-ghost btn-sm" href={sseUrl("/api/logs/download-all")}>⬇ Все логи</a>
-          <button className="btn btn-ghost btn-sm" onClick={async () => {
-            if (!confirm("Обновить панель из репозитория и перезапустить сервис?")) return;
-            try {
-              const r = await apiPost("/api/update");
-              toast.push(r.up_to_date ? "Последняя версия уже установлена"
-                : "Обновление запущено, сервис перезапустится");
-            } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
-          }}>↺ Обновить</button>
+          <a className="btn btn-ghost btn-sm" href={sseUrl("/api/logs/download-all")}>⬇ Скачать логи</a>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)}>⚙ Настройки</button>
         </div>
       </div>
@@ -327,7 +319,7 @@ function SettingsModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     } catch (e) { toast.push(e instanceof Error ? e.message : "Ошибка", false); }
   };
   return (
-    <Modal title="Глобальные настройки" onClose={onClose}
+    <Modal title="Глобальные настройки OlcRTC" onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>Отмена</button>
         <button className="btn" onClick={save}>Сохранить</button>
