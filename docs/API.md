@@ -50,7 +50,7 @@
 
 | Действие | Назначение |
 |:--|:--|
-| `list` | инстансы (полный конфиг inline) + `server` (CPU/RAM) + `jitsi_domains` + блок `wdtt` |
+| `list` | инстансы (полный конфиг inline) + `server` (CPU/RAM) + `jitsi_domains` + `masterdnsvpn` (`{domain, key}` или `null`) + блок `wdtt` |
 | `get_user` / `set_user` | прочитать / изменить инстанс |
 | `create_user` | создать (по умолчанию jitsi+datachannel) |
 | `start_user` / `stop_user` / `delete_user` | управление одним |

@@ -313,7 +313,8 @@ async def api_v1(request: Request) -> Response:
         with mgr.lock:
             users = [inst.public(u) for u in mgr.users.values()]
         return _enc(ak, {"users": users, "server": sysinfo.server_stats(),
-                         "jitsi_domains": jd, "wdtt": _wdtt_block()})
+                         "jitsi_domains": jd, "masterdnsvpn": sysinfo.masterdnsvpn_config(),
+                         "wdtt": _wdtt_block()})
     if action == "set_push_target":
         url = payload.get("url", "").strip()
         mgr.cfg.set("push_url", url)
