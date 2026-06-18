@@ -1,46 +1,38 @@
-# FontaineRTC — Архитектура и план
+# FontaineRTC — Архитектура
 
-FontaineRTC — идейное продолжение и объединение двух проектов:
-
-- **OlcRTC-VPS** — панель-**нода**: запускает экземпляры бинарника `olcrtc` на VPS, по одному на пользователя.
-- **OlcRTC-AdminVPS** — **центральная** панель: мониторит десятки нод (push + poll), управляет инстансами удалённо, TG-алерты, группы.
-
-В FontaineRTC это **единая кодовая база с двумя режимами работы** (`role = node | admin`), современный стек и общее ядро.
+FontaineRTC объединяет две панели управления [OlcRTC](https://github.com/openlibrecommunity/olcrtc)
+в одну кодовую базу с двумя режимами работы (`role = node | admin`).
 
 ---
 
-## 1. Модель объединения: один код, два режима
+## 1. Один код, два режима
 
-При установке/запуске выбирается роль:
+Роль выбирается переменной окружения `FONTAINE_ROLE` при запуске:
 
-| Роль    | Что делает                                                                 |
+| Роль    | Что делает                                                                |
 |:--------|:--------------------------------------------------------------------------|
-| `node`  | Управляет локальными `olcrtc`-процессами (бывший OlcRTC-VPS).             |
-| `admin` | Мониторит и управляет нодами (бывший OlcRTC-AdminVPS).                    |
+| `node`  | Управляет локальными `olcrtc`-процессами и сервисом WDTT на этом VPS.      |
+| `admin` | Мониторит и удалённо управляет нодами (push + поллинг), TG-алерты, группы. |
 
-Один и тот же backend-пакет `fontaine`. Роль выбирает, какие роутеры и фоновые
-воркеры поднимать. Общие модули (`core/`) переиспользуются обеими ролями —
-именно здесь устраняется дублирование оригиналов (крипто, конфиг, URI, матрица
-совместимости, безопасность).
-
-> На будущее заложена возможность роли `master` (node+admin одновременно на одном
-> сервере) — обе роли монтируются в одно приложение. В первой версии не включаем.
+Один backend-пакет `fontaine`. `app.py` по роли монтирует нужный роутер
+(`node/router.py` или `admin/router.py`) и поднимает фоновые воркеры. Общее ядро
+`core/` (crypto, security, URI, матрица совместимости) переиспользуется обеими
+ролями — здесь устранено дублирование исходных панелей.
 
 ---
 
 ## 2. Технологический стек
 
-| Слой          | Выбор                                  | Причина                                               |
-|:--------------|:---------------------------------------|:------------------------------------------------------|
-| Backend       | **FastAPI** (ASGI, uvicorn)            | async, нативные SSE/WebSocket, типобезопасность       |
-| Валидация     | **Pydantic v2** / pydantic-settings    | модели запросов, конфиг из env                        |
-| БД            | **SQLite** (stdlib `sqlite3`, WAL)     | как в оригинале; синхронно; миграция на Postgres при росте |
-| Frontend      | **React + Vite + TypeScript** (SPA)    | реал-тайм дашборды, компонентный UI                   |
-| Состояние UI  | TanStack Query + Zustand               | кэш/поллинг и локальный стейт                          |
-| Деплой        | **Docker Compose**                     | переносимость; для bare-metal — `deploy/install.sh`   |
-| Реал-тайм     | SSE (логи), poll каждые 5с (дашборды)  | как в оригинале                                       |
+| Слой      | Выбор                                   |
+|:----------|:----------------------------------------|
+| Backend   | **FastAPI** (ASGI, uvicorn), Pydantic v2 / pydantic-settings |
+| БД        | **SQLite** (stdlib `sqlite3`, WAL) — только роль admin (группы/серверы) |
+| Frontend  | **React + Vite + TypeScript** (общий SPA, локальный стейт + поллинг) |
+| Реал-тайм | SSE (логи olcrtc и WDTT), поллинг дашбордов раз в ~4с, push нода→admin |
+| Деплой    | `deploy/install.sh` (venv + systemd + опц. nginx) или **Docker Compose** |
 
-> Решение зафиксировано как дефолт; меняется правкой этого документа до начала миграции функционала.
+Состояние сессий — stateless (HMAC над `issued|nonce` с `api_key`), переживает
+рестарт. Собранный `frontend/dist` закоммичен, чтобы на сервере не требовался Node.
 
 ---
 
@@ -49,78 +41,58 @@ FontaineRTC — идейное продолжение и объединение 
 ```
 FontaineRTC/
 ├── README.md
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
+├── docker-compose.yml · .env.example · .gitignore
 ├── backend/
-│   ├── pyproject.toml
-│   ├── Dockerfile
+│   ├── pyproject.toml · Dockerfile
 │   ├── fontaine/
-│   │   ├── __main__.py          # entrypoint: парсит роль, поднимает uvicorn
+│   │   ├── __main__.py          # entrypoint: роль + uvicorn
 │   │   ├── config.py            # Settings (pydantic-settings), ROLE
-│   │   ├── app.py               # фабрика FastAPI, монтаж роутеров по роли
+│   │   ├── app.py               # фабрика FastAPI, монтаж роутеров/воркеров по роли
+│   │   ├── updater.py           # self-update (git reset --hard) + версии/обновления
+│   │   ├── web.py               # отдача собранного SPA
 │   │   ├── core/                # ОБЩЕЕ ЯДРО (обе роли)
-│   │   │   ├── crypto.py        # Hash-CTR + HMAC-SHA256 (перенесено 1:1)
-│   │   │   ├── security.py      # хэш пароля, сессии/токены, rate-limit
+│   │   │   ├── crypto.py        # Hash-CTR + HMAC-SHA256
+│   │   │   ├── security.py      # хэш пароля, stateless-сессии, rate-limit
 │   │   │   ├── uri.py           # сборка/разбор olcrtc:// URI
 │   │   │   └── compat.py        # матрица carrier × transport
-│   │   ├── db/
-│   │   │   ├── base.py          # engine, session
-│   │   │   └── models.py        # groups, servers, instances
 │   │   ├── node/                # РОЛЬ NODE
-│   │   │   ├── router.py        # /api/v1, /sse, управление инстансами
-│   │   │   ├── manager.py       # реестр процессов, watchdog, восстановление
-│   │   │   ├── process.py       # запуск/остановка olcrtc, чтение логов
+│   │   │   ├── router.py        # /api/v1, web-API, SSE-логи
+│   │   │   ├── manager.py       # реестр процессов olcrtc, save/restore
+│   │   │   ├── instance.py      # модель инстанса, public/full проекции, URI
 │   │   │   ├── yaml_writer.py   # генерация <uid>.yaml для бинарника
-│   │   │   └── push.py          # push состояния на admin
-│   │   ├── admin/               # РОЛЬ ADMIN
-│   │   │   ├── router.py        # /api/v1, серверы/группы, проксирование на ноды
-│   │   │   ├── push_in.py       # приём /push/v1/{server_id}
-│   │   │   ├── poller.py        # fallback-поллинг нод
-│   │   │   ├── nodes.py         # клиент к API ноды
-│   │   │   └── telegram.py      # алерты в Telegram
-│   │   └── web.py               # отдача собранного SPA
-│   └── tests/
+│   │   │   ├── store.py · sysinfo.py · push.py · workers.py
+│   │   │   └── wdtt/            # ПОДСИСТЕМА WDTT
+│   │   │       ├── installer.py # установка/удаление/версии wdtt-server
+│   │   │       ├── manager.py   # статус сервиса + CRUD паролей
+│   │   │       └── store.py     # passwords.json + сайдкар fontaine-meta.json
+│   │   └── admin/               # РОЛЬ ADMIN
+│   │       ├── router.py        # web-API, /api/v1, /push/v1, прокси на ноды
+│   │       ├── manager.py       # кэш состояния нод, агрегация, поллер
+│   │       ├── db.py            # группы/серверы (SQLite); сид группы SP-01
+│   │       ├── config_store.py · flags.py
+│   └── tests/                   # 33 теста (crypto/uri/security/yaml/node/admin/wdtt/e2e)
 ├── frontend/
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tsconfig.json
-│   ├── index.html
-│   └── src/
-│       ├── main.tsx, App.tsx
-│       ├── api/                 # клиент к backend
-│       ├── components/          # переиспользуемые (плитки, модалки, toasts)
-│       ├── pages/               # NodeDashboard, AdminDashboard
-│       └── lib/
-├── deploy/
-│   ├── install.sh              # bare-metal установка (venv + systemd + nginx)
-│   ├── fontaine.service
-│   └── nginx.conf.example
-└── docs/
-    ├── ARCHITECTURE.md         # этот файл
-    ├── PROTOCOL.md             # протокол node↔admin (push + API)
-    └── MIGRATION.md            # чеклист переноса функционала по частям
+│   └── src/                     # main.tsx, App.tsx, api/, components/, pages/, theme/, lib/, styles/
+├── deploy/                      # install.sh / update.sh / uninstall.sh, fontaine.service, nginx-пример
+└── docs/                        # ARCHITECTURE / PROTOCOL / API / THEMES
 ```
 
 ---
 
-## 4. Протокол node ↔ admin (сохраняем совместимость)
+## 4. Протокол node ↔ admin
 
-На время миграции оставляем проверенную схему оригинала, вынесенную в `core/crypto.py`:
+Реализация шифрования — `core/crypto.py`; детали действий и push — `docs/PROTOCOL.md`.
 
 - Тело: `base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )`.
 - Шифр: Hash-CTR (XOR с SHA256-keystream). Ключ — 64-символьный HEX (`api_key`).
-- Защита от replay: поле `ts` в каждом запросе, допуск ±60 с.
-- Действия API ноды и формат push сохраняются (см. `docs/PROTOCOL.md`).
-
-Это позволяет новому admin работать со старыми нодами и наоборот в переходный период.
-Модернизация транспорта (mTLS/JWT) — отдельным этапом после полной миграции.
+- Защита от replay: поле `ts` (unix) в каждом запросе, допуск ±60 с.
+- Admin проксирует действия на ноду через `POST /api/node/{action}` (включая WDTT).
 
 ---
 
 ## 5. Контракт с бинарником `olcrtc` (роль node)
 
-Не меняется — фиксируется внешним бинарником:
+Фиксируется внешним бинарником:
 
 - Запуск: `./olcrtc-linux-amd64 <uid>.yaml`.
 - Параметры передаются через YAML (`yaml_writer.py`), отражаются в URI.
@@ -134,7 +106,7 @@ FontaineRTC/
 
 ---
 
-## 6. URI-формат (перенесено 1:1)
+## 6. URI-формат
 
 ```
 olcrtc://<carrier>?<transport><payload>@<roomID>#<key>
@@ -145,7 +117,7 @@ datachannel отсутствует. См. `core/uri.py`.
 
 ---
 
-## 7. Матрица совместимости (перенесено 1:1)
+## 7. Матрица совместимости
 
 | Транспорт    | WBStream | Jitsi | Telemost |
 |:-------------|:--------:|:-----:|:--------:|
@@ -158,26 +130,29 @@ datachannel отсутствует. См. `core/uri.py`.
 
 ---
 
-## 8. План миграции (по частям)
+## 8. Подсистема WDTT (роль node)
 
-Подробный чеклист — `docs/MIGRATION.md`. Крупными вехами:
+WDTT — VPN на базе WireGuard, трафик которого замаскирован под видеозвонок
+ВКонтакте. Управляется на ноде в Python (без мобильного приложения и Telegram-бота):
 
-1. **Скелет + общее ядро** (этот коммит): структура, `core/` (crypto/uri/compat),
-   конфиг, фабрика приложения, заглушки роутеров, docker, install.sh, docs.
-2. **Роль node — backend**: модели инстансов, process manager, watchdog,
-   yaml_writer, SSE-логи, `/api/v1`, push исходящий.
-3. **Роль admin — backend**: модели групп/серверов, приём push, poller,
-   клиент к нодам, TG-алерты, `/api/v1`.
-4. **Frontend**: общий каркас, NodeDashboard, AdminDashboard, реал-тайм.
-5. **Деплой**: Dockerfile'ы, compose, install.sh, nginx, systemd.
-6. **Паритет и тесты**: сверка с оригиналами фича-в-фичу, тесты крипто/URI/API.
-7. **Модернизация**: (опционально) новый транспорт протокола, Postgres, RBAC.
-```
+- **Установка** (`wdtt/installer.py`): из последнего релиза апстрима
+  [proxy-turn-vk-android](https://github.com/amurcanov/proxy-turn-vk-android)
+  скачивается `WDTT-universal.apk`, из него (stdlib `zipfile`) извлекаются
+  `wdtt-server` и `deploy.sh`; `deploy.sh` поднимает systemd-сервис `wdtt.service`.
+  Тег релиза запоминается как версия; APK удаляется.
+- **Пользователи** (`wdtt/manager.py` + `wdtt/store.py`): «пользователь» = запись-
+  пароль в `/etc/wdtt/passwords.json`. CRUD редактирует файл при остановленном
+  сервисе и перезапускает его (сервер читает базу только при старте).
+- **VK-хеш и ссылки**: сам wdtt-server VK-хеш не хранит, поэтому FontaineRTC
+  держит его (и host) в сайдкаре `/etc/wdtt/fontaine-meta.json` — это позволяет
+  восстановить готовую ссылку `wdtt://IP:DTLS:WG:TUN:ПАРОЛЬ:VK_HASH` для таблицы.
+- **Жизненный цикл**: install/update/uninstall обрабатывают FontaineRTC + olcrtc +
+  WDTT вместе; WDTT переустанавливается при обновлении только если вышел новый тег.
 
 ---
 
 ## Благодарности
 
-Архитектура и логика портированы с панелей
-[tankionline2005](https://github.com/tankionline2005) (**OlcRTC-VPS** и
-**OlcRTC-AdminVPS**). Благодарим за предоставленный код, ставший основой FontaineRTC.
+Логика портирована с панелей [tankionline2005](https://github.com/tankionline2005)
+(**OlcRTC-VPS** и **OlcRTC-AdminVPS**). Серверная часть WDTT —
+[amurcanov/proxy-turn-vk-android](https://github.com/amurcanov/proxy-turn-vk-android).

@@ -392,7 +392,7 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
    the explicit per-element transitions above keep their own timings (higher
    specificity wins). */
 *, *::before, *::after {
-  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.45s ease, border-color 0.45s ease, color 0.45s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

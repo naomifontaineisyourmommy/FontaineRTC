@@ -1,7 +1,7 @@
 # Протокол node ↔ admin
 
-Сохраняется совместимым с оригиналами (`OlcRTC-VPS` / `OlcRTC-AdminVPS`) на время
-миграции. Реализация шифрования — `backend/fontaine/core/crypto.py`.
+Реализация шифрования — `backend/fontaine/core/crypto.py`. Полные форматы тел
+ответов — в [API.md](API.md).
 
 ## Шифрование
 
@@ -22,7 +22,7 @@ base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )
 
 | Действие            | Назначение                                            |
 |:--------------------|:------------------------------------------------------|
-| `list`              | список инстансов + статистика сервера                 |
+| `list`              | инстансы + `server` (CPU/RAM) + `jitsi_domains` + `masterdnsvpn` + блок `wdtt` |
 | `get_user`          | полные настройки + статус + options (динамически)     |
 | `set_user`          | импорт настроек инстанса                              |
 | `create_user`       | создать инстанс (по умолчанию jitsi+datachannel)      |
@@ -30,9 +30,13 @@ base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )
 | `start_all` / `stop_all` / `restart_all`   | массовые операции               |
 | `set_jitsi_domains` | задать список Jitsi-доменов                           |
 | `set_push_target`   | задать URL admin для push (`""` = выключить)          |
-| `update_panel`      | скачать свежие файлы и перезапуститься                |
+| `update_panel`      | обновить FontaineRTC + olcrtc + WDTT и перезапуститься |
+| `wdtt_status` / `wdtt_list` | статус WDTT / список паролей                   |
+| `wdtt_add` / `wdtt_del` / `wdtt_toggle` | CRUD паролей WDTT                 |
 
 > `wb_token` хранится только на ноде и **не** отдаётся во внешний `list`.
+> Блок `wdtt` = `{installed, active, main_password, version, users[]}`; у каждого
+> пользователя есть `vk_hash` и готовая ссылка `uri` (`wdtt://…`), если хеш задан.
 
 ## Push нода → admin — `POST /push/v1/{server_id}`
 
@@ -50,9 +54,11 @@ base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )
 
 ## Внешний API admin — `POST /api/v1`
 
-Действие `list` — агрегированный список всех пользователей со всех нод
-(`client_id`, `uri`, `status` active/inactive, `peers_count`, `server_name`,
-`server_country`, `group_id`) + массив `masterdnsvpn` со всех онлайн-нод.
+Действие `list` — агрегировано по всем нодам:
 
-> Подробные форматы полей — в README оригиналов, переносятся дословно в фазах 2–3.
-```
+- `users` — инстансы (`client_id`, `uri`, `status` active/inactive, `peers_count`,
+  `peers_devices`, `server_name`, `server_country`, `group_id`);
+- `masterdnsvpn` — `{domain, key}` со всех онлайн-нод;
+- `wdtt` — пользователи WDTT (поля как у ноды + `server_name`/`server_country`/`group_id`).
+
+> Полные форматы полей с примерами — в [API.md](API.md).
