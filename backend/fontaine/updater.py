@@ -1,9 +1,10 @@
 """Self-update + olcrtc binary fetch.
 
-- The olcrtc binary is always pulled fresh from the latest release (including
-  prereleases) of the OlcRTC-AdvancedInteractive repo.
+- The olcrtc binary comes from the latest release (including prereleases) of the
+  OlcRTC-AdvancedInteractive repo. It's only re-downloaded when missing or a newer
+  release exists (same rule as WDTT) — a current binary is left untouched.
 - Panel self-update pulls the FontaineRTC repo (git), reinstalls the backend and
-  re-fetches the binary, then schedules a service restart (systemd restarts us).
+  refreshes the binary if needed, then schedules a service restart.
 
 All overridable via env so forks/local setups work without code changes.
 """
@@ -76,6 +77,15 @@ def download_binary(dest: Path, repo: str = BINARY_REPO) -> str:
     except Exception:
         pass
     return tag
+
+
+def ensure_binary(dest: Path, repo: str = BINARY_REPO) -> str:
+    """Download the olcrtc binary only if missing or a newer release exists —
+    same rule as WDTT. Returns a short status string; a current binary is left
+    untouched (no download)."""
+    if dest.exists() and _binary_up_to_date():
+        return f"up to date ({binary_version()}) — untouched"
+    return f"updated to {download_binary(dest, repo)}"
 
 
 def binary_version() -> str:
@@ -155,10 +165,12 @@ def self_update(install_dir: Path, fetch_binary: bool = True, progress=None) -> 
             return False, f"pip: {out}"
 
     if fetch_binary:
-        p(3, "Бинарник…")
+        bin_path = install_dir / BINARY_ASSET
+        p(3, "olcrtc — последняя версия" if (bin_path.exists() and _binary_up_to_date())
+             else "Бинарник olcrtc…")
         try:
-            download_binary(install_dir / BINARY_ASSET)
-        except Exception as e:
+            ensure_binary(bin_path)
+        except Exception:
             # non-fatal: a stale binary is better than a failed update
             pass
 

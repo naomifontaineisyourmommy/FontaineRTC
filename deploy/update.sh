@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # FontaineRTC updater — pulls the latest code from the repo, reinstalls the
-# backend, refreshes the olcrtc binary (node role) and restarts the service.
-# The interface "↺ Обновить" button does the same thing.
+# backend, refreshes the olcrtc binary and WDTT if outdated (node role), and
+# restarts the service. The interface "↺ Обновить" button does the same thing.
 #
 # Usage:  sudo bash /opt/fontaine/deploy/update.sh
 #         curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/update.sh | sudo bash
@@ -28,11 +28,11 @@ say "Reinstalling backend"
 
 ROLE="$(grep '^FONTAINE_ROLE=' "$INSTALL_DIR/.env" 2>/dev/null | cut -d= -f2- || echo node)"
 if [ "$ROLE" = "node" ]; then
-  say "Refreshing olcrtc binary (latest release)"
-  "$INSTALL_DIR/.venv/bin/python" - <<PY
+  say "Checking olcrtc binary"
+  FONTAINE_INSTALL_DIR="$INSTALL_DIR" "$INSTALL_DIR/.venv/bin/python" - <<PY
 from pathlib import Path
-from fontaine.updater import download_binary
-print("   olcrtc release:", download_binary(Path("$INSTALL_DIR/$BINARY_NAME")))
+from fontaine.updater import ensure_binary
+print("   olcrtc:", ensure_binary(Path("$INSTALL_DIR/$BINARY_NAME")))
 PY
   say "Checking WDTT"
   FONTAINE_INSTALL_DIR="$INSTALL_DIR" "$INSTALL_DIR/.venv/bin/python" - <<'PY' || say "WDTT step skipped/failed"

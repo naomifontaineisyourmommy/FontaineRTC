@@ -112,7 +112,7 @@ docker compose up --build
   внешний зашифрованный API (`/api/v1`). Первая группа `SP-01` создаётся
   автоматически.
 - Общее: переключаемые цветовые темы с экспортом/импортом, единый апдейтер
-  (FontaineRTC + olcrtc + WDTT), 33 теста (юнит + e2e node↔admin).
+  (FontaineRTC + olcrtc + WDTT), 36 тестов (юнит + e2e node↔admin).
 
 ---
 

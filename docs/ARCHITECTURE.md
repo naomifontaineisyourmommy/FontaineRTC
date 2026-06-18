@@ -70,7 +70,7 @@ FontaineRTC/
 │   │       ├── manager.py       # кэш состояния нод, агрегация, поллер
 │   │       ├── db.py            # группы/серверы (SQLite); сид группы SP-01
 │   │       ├── config_store.py · flags.py
-│   └── tests/                   # 33 теста (crypto/uri/security/yaml/node/admin/wdtt/e2e)
+│   └── tests/                   # 36 тестов (crypto/uri/security/yaml/node/admin/wdtt/updater/e2e)
 ├── frontend/
 │   └── src/                     # main.tsx, App.tsx, api/, components/, pages/, theme/, lib/, styles/
 ├── deploy/                      # install.sh / update.sh / uninstall.sh, fontaine.service, nginx-пример
