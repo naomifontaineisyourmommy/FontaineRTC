@@ -158,9 +158,10 @@ async def self_update(request: Request) -> Response:
     if not _authed(request):
         return _unauth()
     from .. import updater
+    # Admin only ever updates FontaineRTC itself — olcrtc/WDTT don't exist here.
     if updater.is_up_to_date():
         return _ok({"ok": True, "up_to_date": True, "message": "Последняя версия уже установлена"})
-    ok, msg = updater.start_update(updater.install_dir(), fetch_binary=False)
+    ok, msg = updater.start_update(updater.install_dir(), do_panel=True, do_binary=False)
     return _ok({"ok": ok, "up_to_date": False, "message": msg})
 
 

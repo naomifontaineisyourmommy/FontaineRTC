@@ -33,13 +33,27 @@ router = APIRouter(tags=["node"])
 _wdtt = WdttManager()
 
 
+def _wdtt_stale() -> bool:
+    """True when WDTT is installed and a newer release exists."""
+    return wdtt_installer.is_installed() and not wdtt_installer.is_up_to_date()
+
+
 def _node_up_to_date() -> bool:
     """Up to date only when FontaineRTC, olcrtc AND (if present) WDTT are current."""
-    if not updater.is_up_to_date(check_binary=True):
-        return False
-    if wdtt_installer.is_installed() and not wdtt_installer.is_up_to_date():
-        return False
-    return True
+    return (updater.panel_up_to_date()
+            and updater.binary_up_to_date()
+            and not _wdtt_stale())
+
+
+def _start_node_update() -> tuple[bool, str]:
+    """Start a node update of only the stale packages — FontaineRTC, olcrtc and
+    WDTT are checked and updated independently of one another."""
+    return updater.start_update(
+        updater.install_dir(),
+        do_panel=not updater.panel_up_to_date(),
+        do_binary=not updater.binary_up_to_date(),
+        extra=wdtt_installer.reinstall_latest if _wdtt_stale() else None,
+    )
 
 
 def _wdtt_block() -> dict:
@@ -53,12 +67,6 @@ def _wdtt_block() -> dict:
     }
 
 
-def _node_update_extra():
-    """Extra update step run before restart — refresh WDTT only if a newer WDTT
-    release exists. If WDTT is already current, leave it untouched."""
-    if wdtt_installer.is_installed() and not wdtt_installer.is_up_to_date():
-        return wdtt_installer.reinstall_latest
-    return None
 
 # config keys the settings UI may change
 _CONFIG_EDITABLE = {
@@ -167,8 +175,7 @@ async def self_update(request: Request) -> Response:
         return _ok({"error": "Unauthorized"}, 401)
     if _node_up_to_date():
         return _ok({"ok": True, "up_to_date": True, "message": "Последняя версия уже установлена"})
-    ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True,
-                                   extra=_node_update_extra())
+    ok, msg = _start_node_update()
     return _ok({"ok": ok, "up_to_date": False, "message": msg})
 
 
@@ -392,8 +399,7 @@ async def api_v1(request: Request) -> Response:
         if _node_up_to_date():
             return _enc(ak, {"ok": True, "up_to_date": True,
                              "message": "Последняя версия уже установлена"})
-        ok, msg = updater.start_update(updater.install_dir(), fetch_binary=True,
-                                       extra=_node_update_extra())
+        ok, msg = _start_node_update()
         return _enc(ak, {"ok": ok, "up_to_date": False, "message": msg})
 
     # ── WDTT actions (used by the admin panel) ──

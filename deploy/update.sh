@@ -17,14 +17,19 @@ say() { printf '\033[1;36m>>\033[0m %s\n' "$*"; }
 [ "$(id -u)" = "0" ] || { echo "run as root (use sudo)"; exit 1; }
 [ -d "$INSTALL_DIR/.git" ] || { echo "FontaineRTC not found in $INSTALL_DIR — run install.sh first"; exit 1; }
 
-say "Pulling latest code"
-# Hard reset to the remote — the repo is authoritative; locally regenerated files
-# (e.g. setuptools build/) must not block updates. Ignored data/.env stay untouched.
+say "Checking FontaineRTC"
 git -C "$INSTALL_DIR" fetch origin "$BRANCH"
-git -C "$INSTALL_DIR" reset --hard "origin/$BRANCH"
-
-say "Reinstalling backend"
-"$INSTALL_DIR/.venv/bin/pip" install -q "$INSTALL_DIR/backend"
+PANEL_CHANGED=0
+if [ "$(git -C "$INSTALL_DIR" rev-parse HEAD)" != "$(git -C "$INSTALL_DIR" rev-parse "origin/$BRANCH")" ]; then
+  PANEL_CHANGED=1
+  # Hard reset to the remote — the repo is authoritative; locally regenerated files
+  # (e.g. setuptools build/) must not block updates. Ignored data/.env stay untouched.
+  say "Updating panel + reinstalling backend"
+  git -C "$INSTALL_DIR" reset --hard "origin/$BRANCH"
+  "$INSTALL_DIR/.venv/bin/pip" install -q "$INSTALL_DIR/backend"
+else
+  say "Panel already up to date — not touched"
+fi
 
 ROLE="$(grep '^FONTAINE_ROLE=' "$INSTALL_DIR/.env" 2>/dev/null | cut -d= -f2- || echo node)"
 if [ "$ROLE" = "node" ]; then
@@ -49,26 +54,38 @@ else:
 PY
 fi
 
+# One-time .env/unit migrations for older installs — each only changes anything
+# the first time, and any real change requires a restart to take effect.
 # Ensure the SPA path is set (older installs predate this).
-grep -q '^FONTAINE_DIST_DIR=' "$INSTALL_DIR/.env" 2>/dev/null \
-  || echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$INSTALL_DIR/.env"
+if ! grep -q '^FONTAINE_DIST_DIR=' "$INSTALL_DIR/.env" 2>/dev/null; then
+  echo "FONTAINE_DIST_DIR=$INSTALL_DIR/frontend/dist" >> "$INSTALL_DIR/.env"; PANEL_CHANGED=1
+fi
 # Ensure the install dir is set (needed so the panel can locate its own checkout).
-grep -q '^FONTAINE_INSTALL_DIR=' "$INSTALL_DIR/.env" 2>/dev/null \
-  || echo "FONTAINE_INSTALL_DIR=$INSTALL_DIR" >> "$INSTALL_DIR/.env"
+if ! grep -q '^FONTAINE_INSTALL_DIR=' "$INSTALL_DIR/.env" 2>/dev/null; then
+  echo "FONTAINE_INSTALL_DIR=$INSTALL_DIR" >> "$INSTALL_DIR/.env"; PANEL_CHANGED=1
+fi
 
 # Ensure admin has a push URL so nodes receive a push target (else: only polling).
 if [ "$ROLE" = "admin" ] && ! grep -q '^FONTAINE_PANEL_URL=' "$INSTALL_DIR/.env" 2>/dev/null; then
   IP="$(curl -fsSL https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
   PORT="$(grep '^FONTAINE_PANEL_PORT=' "$INSTALL_DIR/.env" | cut -d= -f2-)"
-  [ -n "$IP" ] && echo "FONTAINE_PANEL_URL=http://$IP:${PORT:-8080}" >> "$INSTALL_DIR/.env"
+  [ -n "$IP" ] && { echo "FONTAINE_PANEL_URL=http://$IP:${PORT:-8080}" >> "$INSTALL_DIR/.env"; PANEL_CHANGED=1; }
 fi
 
 # Refresh the systemd unit so unit-level tweaks (timeouts, etc.) propagate.
-if [ -f "$INSTALL_DIR/deploy/$SERVICE.service" ]; then
+if [ -f "$INSTALL_DIR/deploy/$SERVICE.service" ] \
+   && ! cmp -s "$INSTALL_DIR/deploy/$SERVICE.service" "/etc/systemd/system/$SERVICE.service"; then
   cp "$INSTALL_DIR/deploy/$SERVICE.service" "/etc/systemd/system/$SERVICE.service"
-  systemctl daemon-reload
+  systemctl daemon-reload; PANEL_CHANGED=1
 fi
 
-say "Restarting service"
-systemctl restart "$SERVICE"
+# Restart only when the panel itself changed — a binary/WDTT-only refresh needs
+# no panel restart (WDTT restarts its own service; new olcrtc launches pick up
+# the fresh binary).
+if [ "$PANEL_CHANGED" = "1" ]; then
+  say "Restarting service"
+  systemctl restart "$SERVICE"
+else
+  say "Panel unchanged — service not restarted"
+fi
 say "Updated. Logs: journalctl -fu $SERVICE"

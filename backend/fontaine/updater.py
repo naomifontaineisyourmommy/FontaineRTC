@@ -139,41 +139,22 @@ def schedule_restart(delay: float = 2.0) -> None:
     threading.Timer(delay, _do).start()
 
 
-def self_update(install_dir: Path, fetch_binary: bool = True, progress=None) -> tuple[bool, str]:
-    """git pull + reinstall backend + (optionally) refresh binary. Caller restarts.
-    `progress(index, step)` is called as it advances (for the UI overlay)."""
-    def p(i: int, s: str) -> None:
-        if progress:
-            progress(i, s)
-
-    p(1, "Обновление кода…")
-    # Repo is the source of truth — fetch + hard reset so locally regenerated files
-    # (e.g. setuptools build/) can never block the update. Ignored data/.env/config
-    # are untracked and stay untouched.
+def update_panel_code(install_dir: Path) -> tuple[bool, str]:
+    """git fetch + hard reset + reinstall the backend (FontaineRTC panel only).
+    The repo is the source of truth — hard reset so locally regenerated files
+    (e.g. setuptools build/) can never block the update. Ignored data/.env/config
+    are untracked and stay untouched. Caller is responsible for the restart."""
     ok, out = _run(["git", "fetch", "origin", PANEL_BRANCH], cwd=install_dir)
     if not ok:
         return False, f"git fetch: {out}"
     ok, out = _run(["git", "reset", "--hard", f"origin/{PANEL_BRANCH}"], cwd=install_dir)
     if not ok:
         return False, f"git reset: {out}"
-
     pip = install_dir / ".venv" / "bin" / "pip"
     if pip.exists():
-        p(2, "Зависимости…")
         ok, out = _run([str(pip), "install", "-q", str(install_dir / "backend")])
         if not ok:
             return False, f"pip: {out}"
-
-    if fetch_binary:
-        bin_path = install_dir / BINARY_ASSET
-        p(3, "olcrtc — последняя версия" if (bin_path.exists() and _binary_up_to_date())
-             else "Бинарник olcrtc…")
-        try:
-            ensure_binary(bin_path)
-        except Exception:
-            # non-fatal: a stale binary is better than a failed update
-            pass
-
     return True, "ok"
 
 
@@ -193,31 +174,58 @@ def _set_status(**kw) -> None:
         _status.update(kw)
 
 
-def start_update(install_dir: Path, fetch_binary: bool = True, extra=None) -> tuple[bool, str]:
-    """Begin an update in the background. Returns immediately so the UI can poll
-    update_status(). `extra()` (optional) runs after the binary step, before the
-    restart — used to update WDTT too (kept out of updater to avoid a cycle).
-    On success the service is restarted (systemd brings it back)."""
-    total = 5 if extra else 4
+def start_update(install_dir: Path, *, do_panel: bool = True,
+                 do_binary: bool = False, extra=None) -> tuple[bool, str]:
+    """Begin a background update of only the parts the caller flags as stale, so
+    each package (FontaineRTC / olcrtc / WDTT) updates independently:
+
+    - ``do_panel``  — git reset + pip reinstall the panel, then restart the service.
+    - ``do_binary`` — refresh the olcrtc binary (``ensure_binary`` re-checks too).
+    - ``extra()``   — optional callable updating WDTT, returns ``(ok, msg)``; kept
+      out of this module to avoid an import cycle.
+
+    The panel step is fatal (aborts with an error); olcrtc/WDTT are best-effort.
+    The service is restarted **only** when the panel itself changed — a binary- or
+    WDTT-only update needs no panel restart (the UI just reloads). Returns
+    immediately; the UI polls ``update_status()``."""
+    # Ordered plan of (label, fn, fatal) — only the stale parts.
+    plan: list = []
+    if do_panel:
+        plan.append(("Обновление панели FontaineRTC…",
+                     lambda: update_panel_code(install_dir), True))
+    if do_binary:
+        plan.append(("Обновление бинарника olcrtc…",
+                     lambda: (True, ensure_binary(install_dir / BINARY_ASSET)), False))
+    if extra:
+        plan.append(("Обновление WDTT…", extra, False))
+    if not plan:
+        return False, "nothing to update"
+
+    total = len(plan) + 1   # + the final restart / finish step
+
     with _status_lock:
         if _status["updating"]:
             return False, "update already in progress"
         _status.update(updating=True, step="Подключение…", index=0, total=total, error="")
 
     def worker():
-        ok, msg = self_update(install_dir, fetch_binary,
-                              progress=lambda i, s: _set_status(index=i, step=s))
-        if not ok:
-            _set_status(updating=False, step="", error=msg)
-            return
-        if extra:
-            _set_status(index=4, step="WDTT…")
+        for i, (label, fn, fatal) in enumerate(plan, start=1):
+            _set_status(index=i, step=label)
             try:
-                extra()
-            except Exception:
-                pass  # non-fatal: panel/olcrtc already updated
-        _set_status(index=total, step="Перезапуск…")
-        schedule_restart(1.5)
+                ok, msg = fn()
+            except Exception as e:
+                ok, msg = False, str(e)
+            if not ok and fatal:
+                _set_status(updating=False, step="", error=msg)
+                return
+            # non-fatal failures (binary/WDTT) are left as-is: better a stale
+            # component than a failed update; the panel (if any) still proceeds.
+        if do_panel:
+            _set_status(index=total, step="Перезапуск…")
+            schedule_restart(1.5)   # systemd brings us back; UI reloads after
+        else:
+            # No panel change → no service restart; the UI reloads on its own.
+            _set_status(updating=False, index=total, step="Готово")
 
     threading.Thread(target=worker, daemon=True).start()
     return True, "update started"
@@ -253,6 +261,17 @@ def _panel_up_to_date() -> bool:
 def _binary_up_to_date() -> bool:
     cur, lat = binary_version(), latest_binary_tag()
     return bool(cur and lat and cur == lat)
+
+
+# Public predicates the caller uses to plan which parts to update. An unknown
+# local version counts as "not up to date" (so it gets refreshed); an unknown
+# remote (offline) also returns False, but the binary/WDTT steps are best-effort.
+def panel_up_to_date() -> bool:
+    return _panel_up_to_date()
+
+
+def binary_up_to_date() -> bool:
+    return _binary_up_to_date()
 
 
 def is_up_to_date(check_binary: bool = False) -> bool:
