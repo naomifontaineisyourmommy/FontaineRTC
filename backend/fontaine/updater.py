@@ -277,5 +277,10 @@ def version_info(check_binary: bool = False) -> dict:
         bcur, blat = binary_version(), latest_binary_tag()
         info["binary"] = bcur or "unknown"
         info["binary_latest"] = blat or ""
-        info["update_available"] = panel_upd or bool(bcur and blat and bcur != blat)
+        # Offer an update whenever a remote tag is known and the installed one
+        # differs — including when the installed version is unknown (missing
+        # sidecar). Only an empty remote tag (offline / API down) suppresses it,
+        # so we never false-prompt when we couldn't check. Matches is_up_to_date.
+        binary_upd = bool(blat) and bcur != blat
+        info["update_available"] = panel_upd or binary_upd
     return info
