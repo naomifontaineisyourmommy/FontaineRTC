@@ -39,17 +39,54 @@ def _api(url: str, timeout: int = 15) -> object:
         return json.loads(r.read().decode())
 
 
-def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
-    """Return (download_url, tag) for `asset_name` in the newest release of `repo`
-    (prereleases included). Falls back to the conventional latest/download path."""
-    releases = _api(f"https://api.github.com/repos/{repo}/releases")
-    if not isinstance(releases, list) or not releases:
-        return (f"https://github.com/{repo}/releases/latest/download/{asset_name}", "latest")
-    rel = releases[0]  # GitHub returns releases newest-first
+def _asset_url(rel: dict, asset_name: str) -> str:
+    """Download URL of `asset_name` within a release object, '' if absent."""
+    if not isinstance(rel, dict):
+        return ""
     for asset in rel.get("assets", []):
         if asset.get("name") == asset_name:
-            return asset["browser_download_url"], rel.get("tag_name", "?")
-    raise RuntimeError(f"asset {asset_name} not found in latest release {rel.get('tag_name')}")
+            return asset.get("browser_download_url", "")
+    return ""
+
+
+def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
+    """Return (download_url, tag) for `asset_name` in the newest release of `repo`.
+
+    Considers BOTH `/releases/latest` (authoritative for the latest full release,
+    but excludes pre-releases) and the `/releases` list (includes pre-releases, but
+    GitHub may omit a just-published release from it for a while — a real CDN/
+    replication lag we hit in practice). We collect every published release that
+    actually carries the asset from both sources and pick the newest by
+    `published_at`. Falls back to the conventional latest/download path."""
+    candidates: list[tuple[str, str, str]] = []   # (published_at, tag, url)
+
+    def consider(rel: dict) -> None:
+        if not isinstance(rel, dict) or rel.get("draft"):
+            return
+        url = _asset_url(rel, asset_name)
+        if url:
+            candidates.append((rel.get("published_at") or rel.get("created_at") or "",
+                               rel.get("tag_name", "?"), url))
+
+    try:
+        consider(_api(f"https://api.github.com/repos/{repo}/releases/latest"))
+    except Exception:
+        pass   # 404 when the repo has no non-prerelease release yet
+    try:
+        releases = _api(f"https://api.github.com/repos/{repo}/releases")
+        if isinstance(releases, list):
+            for rel in releases:
+                consider(rel)
+    except Exception:
+        pass
+
+    if candidates:
+        # ISO-8601 UTC timestamps sort lexicographically; newest first.
+        candidates.sort(key=lambda c: c[0], reverse=True)
+        _, tag, url = candidates[0]
+        return url, tag
+
+    return (f"https://github.com/{repo}/releases/latest/download/{asset_name}", "latest")
 
 
 def binary_download_url(repo: str = BINARY_REPO) -> tuple[str, str]:

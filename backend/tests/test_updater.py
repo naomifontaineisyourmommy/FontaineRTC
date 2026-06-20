@@ -142,3 +142,57 @@ def test_plan_panel_failure_aborts(tmp_path, plan_spy, monkeypatch):
     st = updater.update_status()
     # panel is fatal: binary/WDTT must not run, error surfaced, no restart
     assert st["error"] == "git boom" and "restart" not in plan_spy and "binary" not in plan_spy
+
+
+# ── release_asset_url: combine /releases/latest + list, pick newest ─────────────
+def _fake_api(latest, listing):
+    def api(url):
+        if url.endswith("/releases/latest"):
+            if latest is None:
+                raise RuntimeError("404")
+            return latest
+        if url.endswith("/releases"):
+            return listing
+        raise AssertionError(url)
+    return api
+
+
+def _rel(tag, when, asset="olcrtc-linux-amd64", draft=False):
+    a = [{"name": asset, "browser_download_url": f"https://x/{tag}/{asset}"}] if asset else []
+    return {"tag_name": tag, "published_at": when, "draft": draft, "assets": a}
+
+
+def test_release_pick_latest_when_list_lags(monkeypatch):
+    # /releases/latest already has v1.0.2 but the list still lags (only v1.0.1)
+    latest = _rel("v1.0.2-beta", "2026-06-20T05:29:48Z")
+    listing = [_rel("v1.0.1-beta", "2026-06-19T06:00:55Z"),
+               _rel("v1.0.0-beta", "2026-06-16T08:47:04Z")]
+    monkeypatch.setattr(updater, "_api", _fake_api(latest, listing))
+    url, tag = updater.release_asset_url("r", "olcrtc-linux-amd64")
+    assert tag == "v1.0.2-beta" and url.endswith("/v1.0.2-beta/olcrtc-linux-amd64")
+
+
+def test_release_prerelease_newer_than_latest(monkeypatch):
+    # a pre-release (only in the list, excluded from /releases/latest) is newest
+    latest = _rel("v1.0.2-beta", "2026-06-20T05:29:48Z")
+    listing = [_rel("v1.0.3-pre", "2026-06-21T10:00:00Z"),
+               _rel("v1.0.1-beta", "2026-06-19T06:00:55Z")]
+    monkeypatch.setattr(updater, "_api", _fake_api(latest, listing))
+    _, tag = updater.release_asset_url("r", "olcrtc-linux-amd64")
+    assert tag == "v1.0.3-pre"
+
+
+def test_release_skips_draft_and_missing_asset(monkeypatch):
+    latest = _rel("v2.0.0", "2026-07-01T00:00:00Z", asset=None)   # no matching asset
+    listing = [_rel("v2.0.1", "2026-07-02T00:00:00Z", draft=True),  # draft ignored
+               _rel("v1.9.0", "2026-06-01T00:00:00Z")]              # has the asset
+    monkeypatch.setattr(updater, "_api", _fake_api(latest, listing))
+    _, tag = updater.release_asset_url("r", "olcrtc-linux-amd64")
+    assert tag == "v1.9.0"
+
+
+def test_release_fallback_when_asset_absent_everywhere(monkeypatch):
+    monkeypatch.setattr(updater, "_api", _fake_api(None, []))
+    url, tag = updater.release_asset_url("owner/repo", "olcrtc-linux-amd64")
+    assert tag == "latest" and url == \
+        "https://github.com/owner/repo/releases/latest/download/olcrtc-linux-amd64"
