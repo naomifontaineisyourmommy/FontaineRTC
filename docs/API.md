@@ -86,6 +86,7 @@
   restart-all, **wdtt-status, wdtt-list, wdtt-add, wdtt-del, wdtt-toggle**
 - `POST /api/jitsi-domains/broadcast`, `POST /api/tg-settings`, `POST /api/tg-updates`
 - `POST /api/poll-interval`, `POST /api/update` (только FontaineRTC панели)
+- `GET/POST /api/subscription` — настройки раздачи olcrtc-подписки (агрегат всех нод)
 
 ### Нода
 - `GET /api/status` — инстансы + ресурсы + jitsi_domains + masterdnsvpn
@@ -95,6 +96,13 @@
 - `GET /api/config`, `POST /api/config/save`, `GET /api/genkey`
 - `GET /api/logs/stream/{uid}` (SSE), `GET /api/logs/download[/{uid}|-all]`
 - `POST /api/update` (FontaineRTC + olcrtc + WDTT)
+- `GET/POST /api/subscription` — настройки раздачи olcrtc-подписки (свои инстансы)
+
+> **Подписка olcrtc** (`/api/subscription`: `{enabled, name, refresh, port}`)
+> поднимает **второй HTTP-сервер на отдельном порту** (по умолчанию 8081), который
+> отдаёт `text/plain` файл подписки (формат olcrtc `docs/sub.md`) по `GET /`.
+> Эндпоинт публичный (без токена); порт включается/меняется на лету. Node отдаёт
+> свои инстансы, admin — со всех нод.
 
 #### WDTT (нода)
 - `GET /api/wdtt` — статус + пользователи + версия

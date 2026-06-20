@@ -12,6 +12,8 @@ import urllib.parse
 
 from fastapi import APIRouter, Request, Response
 
+from .. import subserver
+from ..config import get_settings
 from ..core import crypto, security
 
 router = APIRouter(tags=["admin"])
@@ -175,6 +177,26 @@ async def updating(request: Request) -> Response:
 async def version(request: Request) -> Response:
     from .. import updater
     return _ok(updater.version_info())
+
+
+@router.get("/api/subscription")
+async def subscription_get(request: Request) -> Response:
+    if not _authed(request):
+        return _unauth()
+    return _ok(subserver.sub_settings(_mgr(request)))
+
+
+@router.post("/api/subscription")
+async def subscription_set(request: Request) -> Response:
+    if not _authed(request):
+        return _unauth()
+    mgr = _mgr(request)
+    d = await _json_body(request)
+    err = subserver.save_settings(mgr, d, get_settings().panel_port)
+    if err:
+        return _ok({"error": err}, 400)
+    await subserver.apply_current()
+    return _ok({"ok": True, **subserver.sub_settings(mgr)})
 
 
 @router.post("/api/poll-interval")

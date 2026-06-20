@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api/client";
 import { Modal, ModeToggle, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { WdttAddForm, WdttUsersTable, type WdttUser } from "../components/wdtt";
+import { SubscriptionModal } from "../components/subscription";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 import { COUNTRIES, isKnownCountry } from "../lib/countries";
 
@@ -26,7 +27,7 @@ export function AdminDashboard() {
   const [data, setData] = useState<Data | null>(null);
   const [q, setQ] = useState("");
   const [openSrv, setOpenSrv] = useState<number | null>(null);
-  const [modal, setModal] = useState<null | "addServer" | "groups" | "tg" | "jitsi">(null);
+  const [modal, setModal] = useState<null | "addServer" | "groups" | "tg" | "jitsi" | "sub">(null);
   const toast = useToast();
 
   const refresh = useCallback(async () => {
@@ -57,6 +58,7 @@ export function AdminDashboard() {
           }}>＋ Сервер</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("groups")}>⊞ Группы</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("jitsi")}>Jitsi-домены</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setModal("sub")}>Настроить подписку OlcRTC</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal("tg")}>TG-алерты</button>
           <button className="btn btn-ghost btn-sm" onClick={async () => {
             if (!confirm("Обновить все ноды из их репозиториев?")) return;
@@ -95,6 +97,7 @@ export function AdminDashboard() {
       {modal === "groups" && <GroupsModal groups={groups} onClose={() => setModal(null)} onChanged={refresh} />}
       {modal === "tg" && data && <TgModal data={data} onClose={() => setModal(null)} onSaved={() => { setModal(null); refresh(); }} />}
       {modal === "jitsi" && <JitsiModal onClose={() => setModal(null)} />}
+      {modal === "sub" && <SubscriptionModal onClose={() => setModal(null)} />}
     </>
   );
 }

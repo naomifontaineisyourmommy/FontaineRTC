@@ -45,6 +45,7 @@ FontaineRTC/
 │   │   ├── config.py            # Settings (pydantic-settings), ROLE
 │   │   ├── app.py               # фабрика FastAPI, монтаж роутеров/воркеров по роли
 │   │   ├── updater.py           # self-update (git reset --hard) + версии/обновления
+│   │   ├── subserver.py         # второй HTTP-порт: раздача olcrtc-подписки (sub.md)
 │   │   ├── web.py               # отдача собранного SPA
 │   │   ├── core/                # ОБЩЕЕ ЯДРО (обе роли)
 │   │   │   ├── crypto.py        # Hash-CTR + HMAC-SHA256

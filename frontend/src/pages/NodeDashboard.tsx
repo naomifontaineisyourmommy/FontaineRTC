@@ -4,6 +4,7 @@ import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../co
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 import { highlightLine } from "../lib/logHighlight";
 import { highlightJs } from "../lib/jsHighlight";
+import { SubscriptionModal } from "../components/subscription";
 import { WdttPanel } from "./WdttPanel";
 
 // Console one-liner that extracts the WB Stream account token (shown in the help
@@ -47,6 +48,7 @@ export function NodeDashboard({ mode }: { mode: "olcrtc" | "wdtt" }) {
   const [sel, setSel] = useState<string>("");
   const [showAdd, setShowAdd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSub, setShowSub] = useState(false);
   const toast = useToast();
 
   const refresh = useCallback(async () => {
@@ -89,9 +91,12 @@ export function NodeDashboard({ mode }: { mode: "olcrtc" | "wdtt" }) {
         </div>
         <div className="row" style={{ gap: 8 }}>
           <a className="btn btn-ghost btn-sm" href={sseUrl("/api/logs/download-all")}>⬇ Скачать логи</a>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowSub(true)}>Настроить подписку</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)}>⚙ Настройки</button>
         </div>
       </div>
+
+      {showSub && <SubscriptionModal onClose={() => setShowSub(false)} />}
 
       {users.length === 0 && <div className="empty">Нет инстансов. Нажмите «＋ Инстанс».</div>}
 

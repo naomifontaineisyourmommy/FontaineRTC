@@ -21,7 +21,8 @@ import zipfile
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 
-from .. import updater
+from .. import subserver, updater
+from ..config import get_settings
 from ..core import crypto, security
 from ..core.compat import COMPAT_SET
 from . import instance as inst
@@ -193,6 +194,29 @@ async def version(request: Request) -> Response:
     # one update covers all three (FontaineRTC + olcrtc + WDTT), so surface any
     info["update_available"] = info["update_available"] or w["update_available"]
     return _ok(info)
+
+
+@router.get("/api/subscription")
+async def subscription_get(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    return _ok(subserver.sub_settings(_mgr(request)))
+
+
+@router.post("/api/subscription")
+async def subscription_set(request: Request) -> Response:
+    if not _authed(request):
+        return _ok({"error": "Unauthorized"}, 401)
+    mgr = _mgr(request)
+    try:
+        d = await _json_body(request)
+    except Exception:
+        return _ok({"error": "invalid json"}, 400)
+    err = subserver.save_settings(mgr, d, get_settings().panel_port)
+    if err:
+        return _ok({"error": err}, 400)
+    await subserver.apply_current()
+    return _ok({"ok": True, **subserver.sub_settings(mgr)})
 
 
 @router.get("/api/genkey")

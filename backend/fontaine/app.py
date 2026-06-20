@@ -35,9 +35,13 @@ async def _lifespan(app: FastAPI):
         for t in threads:
             t.start()
         mgr.recover()  # respawn instances that were running before restart
+        from . import subserver
+        subserver.init(mgr, Role.node)
+        await subserver.apply_current()   # start the subscription port if enabled
         try:
             yield
         finally:
+            await subserver.shutdown()
             stop.set()
             mgr.push_event.set()  # unblock push worker
             with mgr.lock:
@@ -55,9 +59,13 @@ async def _lifespan(app: FastAPI):
         app.state.worker_stop = stop
         poller = threading.Thread(target=mgr.poll_loop, args=(stop,), daemon=True)
         poller.start()
+        from . import subserver
+        subserver.init(mgr, Role.admin)
+        await subserver.apply_current()   # start the subscription port if enabled
         try:
             yield
         finally:
+            await subserver.shutdown()
             stop.set()
             mgr.db.checkpoint()
 
