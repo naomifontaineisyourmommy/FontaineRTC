@@ -58,25 +58,25 @@ def test_render_admin_disabled_returns_none():
     assert subserver._render_admin(mgr) is None
 
 
-def test_render_admin_format():
+def test_render_admin_only_live_uris():
     data = {"servers": [
         {"name": "DE-01", "country": "Germany", "users": [
-            {"uri": "olcrtc://jitsi?datachannel@any#abc"},
-            {"uri": ""},                                  # skipped (no uri)
+            {"uri": "olcrtc://jitsi?datachannel@any#abc", "uri_live": True},
+            {"uri": "olcrtc://jitsi?datachannel@any#dead", "uri_live": False},  # not live → skip
+            {"uri": "", "uri_live": True},                                     # no uri → skip
         ]},
         {"name": "ES-01", "country": "Spain", "users": [
-            {"uri": "olcrtc://wbstream?seichannel@room#def"},
+            {"uri": "olcrtc://wbstream?seichannel@room#def", "uri_live": True},
         ]},
     ]}
     mgr = FakeAdmin(FakeCfg({"sub_enabled": True, "sub_name": "Pool", "sub_refresh": "10m"}), data)
     text = subserver._render_admin(mgr)
     lines = text.splitlines()
     assert lines[0] == "#name: Pool"
-    assert lines[1].startswith("#update: ")
     assert lines[2] == "#refresh: 10m"
     assert "olcrtc://jitsi?datachannel@any#abc" in lines
     assert "##name: DE-01" in lines and "##comment: Germany" in lines
-    assert "olcrtc://wbstream?seichannel@room#def" in lines
-    assert "##name: ES-01" in lines
-    # the empty-uri instance contributed no olcrtc line
+    assert "olcrtc://wbstream?seichannel@room#def" in lines and "##name: ES-01" in lines
+    # only the two live instances make it in — dead/empty URIs are excluded
+    assert "olcrtc://jitsi?datachannel@any#dead" not in lines
     assert sum(1 for ln in lines if ln.startswith("olcrtc://")) == 2

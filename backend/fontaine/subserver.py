@@ -45,10 +45,10 @@ def _render_node(mgr) -> str | None:
         users = [inst.public(u) for u in mgr.users.values()]
     out = _header(s)
     for u in users:
-        uri = u.get("uri", "")
-        if not uri:
+        # Only live instances: a ready URI (room fully up) — never dead ones.
+        if not u.get("uri") or not u.get("uri_live"):
             continue
-        out += [uri, f"##name: {u.get('carrier', '')}/{u.get('transport', '')}", ""]
+        out += [u["uri"], f"##name: {u.get('carrier', '')}/{u.get('transport', '')}", ""]
     return "\n".join(out)
 
 
@@ -59,10 +59,10 @@ def _render_admin(mgr) -> str | None:
     out = _header(s)
     for srv in mgr.build_data().get("servers", []):
         for vu in srv.get("users", []):
-            uri = vu.get("uri", "")
-            if not uri:
+            # Only live instances (URI ready) — skip dead/not-yet-up ones.
+            if not vu.get("uri") or not vu.get("uri_live"):
                 continue
-            out += [uri, f"##name: {srv.get('name', '')}"]
+            out += [vu["uri"], f"##name: {srv.get('name', '')}"]
             if srv.get("country"):
                 out.append(f"##comment: {srv['country']}")
             out.append("")
