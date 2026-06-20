@@ -20,7 +20,6 @@
       "server_name": "DE-01", "server_country": "Germany", "group_id": 1
     }
   ],
-  "masterdnsvpn": [ {"domain": "…", "key": "…"}, … ],
   "wdtt": [
     {
       "password": "…", "status": "active|bound|expired|deactivated",
@@ -50,7 +49,7 @@
 
 | Действие | Назначение |
 |:--|:--|
-| `list` | инстансы (полный конфиг inline) + `server` (CPU/RAM) + `jitsi_domains` + `masterdnsvpn` (`{domain, key}` или `null`) + блок `wdtt` |
+| `list` | инстансы (полный конфиг inline) + `server` (CPU/RAM) + `jitsi_domains` + блок `wdtt` |
 | `get_user` / `set_user` | прочитать / изменить инстанс |
 | `create_user` | создать (по умолчанию jitsi+datachannel) |
 | `start_user` / `stop_user` / `delete_user` | управление одним |
@@ -89,7 +88,7 @@
 - `GET/POST /api/subscription` — настройки раздачи olcrtc-подписки (агрегат всех нод)
 
 ### Нода
-- `GET /api/status` — инстансы + ресурсы + jitsi_domains + masterdnsvpn
+- `GET /api/status` — инстансы + ресурсы + jitsi_domains
 - `POST /api/users/add`, `POST /api/users/{start,stop,delete}/{uid}`
 - `POST /api/users/{start-all,stop-all,restart-all}`
 - `POST /api/users/config/{uid}` — изменить настройки инстанса

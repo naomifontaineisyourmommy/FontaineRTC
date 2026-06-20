@@ -60,7 +60,6 @@ def test_state_push_updates_cache(client):
         "users": [{"id": "u1", "uri": "olcrtc://jitsi?datachannel@r#k",
                    "running": True, "uri_live": True, "carrier": "jitsi",
                    "transport": "datachannel", "peers_count": 3}],
-        "masterdnsvpn": {"domain": "vpn.x", "key": "mdk"},
     }
     body = crypto.encrypt(SRV_KEY, json.dumps(push).encode())
     r = client.post(f"/push/v1/{sid}", content=body, headers={"Content-Type": "text/plain"})

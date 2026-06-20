@@ -1,13 +1,9 @@
-"""Host resource stats + MasterDNSVPN config (ported from OlcRTC-VPS).
+"""Host resource stats (ported from OlcRTC-VPS).
 
 Reads Linux /proc; on non-Linux dev hosts the readers degrade to zeros, which is
 harmless because the node always runs on the Linux VPS alongside the binary.
 """
 
-import re
-from pathlib import Path
-
-_MASTERDNS_BASE = Path("/opt/masterdnsvpn")
 _cpu_prev: tuple[int, int] | None = None
 
 
@@ -57,16 +53,3 @@ def server_stats() -> dict:
     except Exception:
         pass
     return stats
-
-
-def masterdnsvpn_config() -> dict | None:
-    """Return {'domain', 'key'} if MasterDNSVPN is installed, else None."""
-    if not _MASTERDNS_BASE.exists():
-        return None
-    try:
-        key = (_MASTERDNS_BASE / "encrypt_key.txt").read_text().strip()
-        content = (_MASTERDNS_BASE / "server_config.toml").read_text()
-        m = re.search(r'DOMAIN\s*=\s*\["(.+?)"\]', content)
-        return {"domain": m.group(1) if m else None, "key": key}
-    except Exception:
-        return None

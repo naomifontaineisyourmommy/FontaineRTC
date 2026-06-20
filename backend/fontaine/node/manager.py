@@ -344,7 +344,6 @@ class NodeManager:
             "server": sysinfo.server_stats(),
             "users": users,
             "jitsi_domains": self.cfg.get("jitsi_domains", ""),
-            "masterdnsvpn": sysinfo.masterdnsvpn_config(),
         }
         try:
             from .wdtt.manager import WdttManager

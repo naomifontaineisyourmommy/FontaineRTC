@@ -43,8 +43,7 @@ def test_crud_flow(env):
     assert "wb_token" in lst["users"][0]
     assert "custom_room_id" in lst["users"][0]
     assert "jitsi_domains" in lst
-    # admin's poller reads these straight from list (push isn't guaranteed)
-    assert "masterdnsvpn" in lst        # {domain,key} or null when not installed
+    # admin's poller reads this straight from list (push isn't guaranteed)
     assert "wdtt" in lst
     assert _call(c, ak, {"action": "delete_user", "id": uid})["ok"]
 

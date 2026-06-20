@@ -19,7 +19,7 @@ from .flags import flag
 
 _EMPTY_CACHE = {
     "online": False, "stats": {}, "users": [],
-    "last_seen": 0, "last_push_at": 0, "masterdnsvpn": None, "jitsi_domains": "",
+    "last_seen": 0, "last_push_at": 0, "jitsi_domains": "",
     "wdtt": {},
 }
 
@@ -110,7 +110,6 @@ class AdminManager:
         self.cache_set(srv["id"], {
             "online": True, "stats": res.get("server", {}), "users": res.get("users", []),
             "last_seen": time.time(), "last_push_at": c.get("last_push_at", 0),
-            "masterdnsvpn": res.get("masterdnsvpn", c.get("masterdnsvpn")),
             "jitsi_domains": res.get("jitsi_domains", c.get("jitsi_domains", "")),
             "wdtt": res.get("wdtt", c.get("wdtt", {})),
         })
@@ -133,7 +132,6 @@ class AdminManager:
                     "users": res.get("users", []),
                     "last_seen": now,
                     "last_push_at": last_push,
-                    "masterdnsvpn": res.get("masterdnsvpn", c.get("masterdnsvpn")),
                     "jitsi_domains": res.get("jitsi_domains", c.get("jitsi_domains", "")),
                     "wdtt": res.get("wdtt", c.get("wdtt", {})),
                 })
@@ -215,7 +213,6 @@ class AdminManager:
                 "clients_online": clients_online,
                 "push_active": (c.get("last_push_at", 0) > 0
                                 and now - c.get("last_push_at", 0) < stale_after),
-                "masterdnsvpn": c.get("masterdnsvpn") if c["online"] else None,
                 "jitsi_domains": c.get("jitsi_domains", ""),
                 "wdtt": c.get("wdtt", {}),
                 # forward the full instance objects (node already sends everything the
@@ -231,7 +228,7 @@ class AdminManager:
         return result
 
     def api_v1_list(self) -> dict:
-        users_out, mdns_out, wdtt_out = [], [], []
+        users_out, wdtt_out = [], []
         for srv in self.db.servers():
             c = self.cache_get(srv["id"])
             for vu in c.get("users", []):
@@ -244,15 +241,12 @@ class AdminManager:
                     "server_name": srv["name"], "server_country": srv["country"],
                     "group_id": srv.get("group_id"),
                 })
-            mdns = c.get("masterdnsvpn") if c.get("online") else None
-            if mdns:
-                mdns_out.append({"domain": mdns.get("domain", ""), "key": mdns.get("key", "")})
             for wu in (c.get("wdtt", {}) or {}).get("users", []):
                 wdtt_out.append({
                     **wu, "server_name": srv["name"], "server_country": srv["country"],
                     "group_id": srv.get("group_id"),
                 })
-        return {"users": users_out, "masterdnsvpn": mdns_out, "wdtt": wdtt_out}
+        return {"users": users_out, "wdtt": wdtt_out}
 
     def update_all_servers(self, url: str) -> list[dict]:
         servers = self.db.servers()

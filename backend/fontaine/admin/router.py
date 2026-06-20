@@ -126,7 +126,6 @@ async def handle_push(sid: str, request: Request) -> Response:
         "users": payload.get("users", []),
         "last_seen": time.time(),
         "last_push_at": time.time(),
-        "masterdnsvpn": payload.get("masterdnsvpn"),
         "jitsi_domains": payload.get("jitsi_domains", ""),
         "wdtt": payload.get("wdtt", {}),
     })

@@ -22,7 +22,7 @@ base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )
 
 | Действие            | Назначение                                            |
 |:--------------------|:------------------------------------------------------|
-| `list`              | инстансы + `server` (CPU/RAM) + `jitsi_domains` + `masterdnsvpn` + блок `wdtt` |
+| `list`              | инстансы + `server` (CPU/RAM) + `jitsi_domains` + блок `wdtt` |
 | `get_user`          | полные настройки + статус + options (динамически)     |
 | `set_user`          | импорт настроек инстанса                              |
 | `create_user`       | создать инстанс (по умолчанию jitsi+datachannel)      |
@@ -44,7 +44,7 @@ base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )
 
 **Тип 1 — состояние** (heartbeat 30с + при каждом изменении): `server`, `users[]`
 (c `uri`, `running`, `uri_live`, `carrier`, `transport`, `uptime`, `peers_count`,
-`peers_devices`, `traffic_rx/tx`), `masterdnsvpn` (объект или `null`).
+`peers_devices`, `traffic_rx/tx`), `jitsi_domains`, блок `wdtt`.
 
 **Тип 2 — ошибка процесса** (`type: "error"`): `user_id`, `carrier`, `transport`,
 `error`. Admin шлёт Telegram-уведомление.
@@ -58,7 +58,6 @@ base64url( nonce(16) | HMAC-SHA256(32) | ciphertext )
 
 - `users` — инстансы (`client_id`, `uri`, `status` active/inactive, `peers_count`,
   `peers_devices`, `server_name`, `server_country`, `group_id`);
-- `masterdnsvpn` — `{domain, key}` со всех онлайн-нод;
 - `wdtt` — пользователи WDTT (поля как у ноды + `server_name`/`server_country`/`group_id`).
 
 > Полные форматы полей с примерами — в [API.md](API.md).
