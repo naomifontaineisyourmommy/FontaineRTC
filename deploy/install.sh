@@ -9,8 +9,6 @@
 #
 # Optional env:
 #   FONTAINE_PORT=8080            panel port
-#   ADMIN_DOMAIN=panel.example.com   (admin role) set up nginx HTTPS reverse proxy
-#   ADMIN_HTTPS_PORT=8443
 set -euo pipefail
 
 REPO_URL="${FONTAINE_REPO_URL:-https://github.com/naomifontaineisyourmommy/FontaineRTC.git}"
@@ -114,27 +112,9 @@ fi
 IP="$(curl -fsSL https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
 [ -n "$IP" ] || IP="<this-server-ip>"
 
-# ── optional nginx HTTPS for admin ──
-if [ "$ROLE" = "admin" ] && [ -n "${ADMIN_DOMAIN:-}" ] && command -v nginx >/dev/null 2>&1; then
-  HTTPS_PORT="${ADMIN_HTTPS_PORT:-8443}"
-  CERT="/etc/letsencrypt/live/$ADMIN_DOMAIN"
-  if [ -f "$CERT/fullchain.pem" ]; then
-    say "Configuring nginx HTTPS for $ADMIN_DOMAIN:$HTTPS_PORT"
-    sed -e "s/example.com/$ADMIN_DOMAIN/g" -e "s/8443/$HTTPS_PORT/g" \
-        "$INSTALL_DIR/deploy/nginx.conf.example" > /etc/nginx/sites-available/fontaine
-    ln -sf /etc/nginx/sites-available/fontaine /etc/nginx/sites-enabled/fontaine
-    nginx -t && systemctl reload nginx
-    sed -i "s|^FONTAINE_PANEL_HOST=.*|FONTAINE_PANEL_HOST=127.0.0.1|" "$ENV_FILE"
-    grep -q '^FONTAINE_PANEL_URL=' "$ENV_FILE" \
-      || echo "FONTAINE_PANEL_URL=https://$ADMIN_DOMAIN:$HTTPS_PORT" >> "$ENV_FILE"
-    command -v ufw >/dev/null && ufw allow "$HTTPS_PORT/tcp" || true
-  else
-    say "No certificate at $CERT — skipping HTTPS (panel stays HTTP)"
-  fi
-fi
-
-# Admin pushes are registered on nodes using this URL — default to HTTP when not
-# behind nginx, otherwise nodes never receive a push target (only fallback poll).
+# Admin pushes are registered on nodes using this URL, so nodes can reach the
+# panel directly over HTTP (anyone who wants TLS can put their own reverse proxy
+# in front — the panel doesn't manage nginx/certificates).
 if [ "$ROLE" = "admin" ]; then
   grep -q '^FONTAINE_PANEL_URL=' "$ENV_FILE" \
     || echo "FONTAINE_PANEL_URL=http://$IP:$PORT" >> "$ENV_FILE"

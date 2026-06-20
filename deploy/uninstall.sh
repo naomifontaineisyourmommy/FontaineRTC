@@ -32,12 +32,6 @@ if [ -x /usr/local/bin/wdtt-deploy.sh ]; then
   rm -f /usr/local/bin/wdtt-deploy.sh /usr/local/bin/wdtt-server.version
 fi
 
-# remove nginx site if present
-if [ -e /etc/nginx/sites-enabled/fontaine ]; then
-  rm -f /etc/nginx/sites-enabled/fontaine /etc/nginx/sites-available/fontaine
-  nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || true
-fi
-
 if [ "$PURGE" = "1" ]; then
   say "Removing everything in $INSTALL_DIR (--purge)"
   rm -rf "$INSTALL_DIR"

@@ -31,8 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRT
 ```
 
 После установки выводятся **адрес панели**, **пароль** и **API-ключ** (один раз).
-Admin за HTTPS: добавьте `ADMIN_DOMAIN=panel.example.com` (нужен nginx + сертификат
-Let's Encrypt) — установщик настроит reverse-proxy.
+Панель работает по HTTP; если нужен TLS — поставьте перед ней свой reverse-proxy.
 
 **Обновление** (то же делает кнопка «↺ Обновить» в интерфейсе). На ноде проверяет
 и обновляет всё сразу — FontaineRTC, olcrtc и WDTT (бинарники трогаются только если

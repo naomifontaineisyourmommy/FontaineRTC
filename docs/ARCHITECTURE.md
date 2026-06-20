@@ -25,7 +25,7 @@
 | БД        | **SQLite** (stdlib `sqlite3`, WAL) — только роль admin (группы/серверы) |
 | Frontend  | **React + Vite + TypeScript** (общий SPA, локальный стейт + поллинг) |
 | Реал-тайм | SSE (логи olcrtc и WDTT), поллинг дашбордов раз в ~4с, push нода→admin |
-| Деплой    | `deploy/install.sh` (venv + systemd + опц. nginx) или **Docker Compose** |
+| Деплой    | `deploy/install.sh` (venv + systemd) или **Docker Compose** |
 
 Состояние сессий — stateless (HMAC над `issued|nonce` с `api_key`), переживает
 рестарт. Собранный `frontend/dist` закоммичен, чтобы на сервере не требовался Node.
@@ -69,7 +69,7 @@ FontaineRTC/
 │   └── tests/                   # 36 тестов (crypto/uri/security/yaml/node/admin/wdtt/updater/e2e)
 ├── frontend/
 │   └── src/                     # main.tsx, App.tsx, api/, components/, pages/, theme/, lib/, styles/
-├── deploy/                      # install.sh / update.sh / uninstall.sh, fontaine.service, nginx-пример
+├── deploy/                      # install.sh / update.sh / uninstall.sh, fontaine.service
 └── docs/                        # ARCHITECTURE / PROTOCOL / API / THEMES
 ```
 
