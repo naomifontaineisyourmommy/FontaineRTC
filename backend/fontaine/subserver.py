@@ -36,6 +36,20 @@ def _header(s: dict) -> list[str]:
     return [f"#name: {s['name']}", f"#update: {int(time.time())}", f"#refresh: {s['refresh']}", ""]
 
 
+def _jitsi_comment(u: dict) -> list[str]:
+    """For jitsi instances, a ##comment with the bare Jitsi domain (no scheme).
+    Non-jitsi (or jitsi without a chosen domain) get no comment."""
+    if u.get("carrier") != "jitsi":
+        return []
+    dom = (u.get("jitsi_chosen_domain") or "").strip()
+    dom = dom.removeprefix("https://").removeprefix("http://").rstrip("/")
+    return [f"##comment: {dom}"] if dom else []
+
+
+def _is_live(u: dict) -> bool:
+    return bool(u.get("uri") and u.get("uri_live"))
+
+
 def _render_node(mgr) -> str | None:
     s = sub_settings(mgr)
     if not s["enabled"]:
@@ -44,11 +58,12 @@ def _render_node(mgr) -> str | None:
     with mgr.lock:
         users = [inst.public(u) for u in mgr.users.values()]
     out = _header(s)
+    n = 0
     for u in users:
-        # Only live instances: a ready URI (room fully up) — never dead ones.
-        if not u.get("uri") or not u.get("uri_live"):
+        if not _is_live(u):              # only live instances (room fully up)
             continue
-        out += [u["uri"], f"##name: {u.get('carrier', '')}/{u.get('transport', '')}", ""]
+        n += 1
+        out += [u["uri"], f"##name: ALT {n}", *_jitsi_comment(u), ""]
     return "\n".join(out)
 
 
@@ -56,16 +71,22 @@ def _render_admin(mgr) -> str | None:
     s = sub_settings(mgr)
     if not s["enabled"]:
         return None
+    from .admin.flags import flag_emoji
     out = _header(s)
     for srv in mgr.build_data().get("servers", []):
+        icon = flag_emoji(srv.get("country", ""))
+        name = srv.get("name", "")
+        i = 0
         for vu in srv.get("users", []):
-            # Only live instances (URI ready) — skip dead/not-yet-up ones.
-            if not vu.get("uri") or not vu.get("uri_live"):
+            if not _is_live(vu):         # only live instances
                 continue
-            out += [vu["uri"], f"##name: {srv.get('name', '')}"]
-            if srv.get("country"):
-                out.append(f"##comment: {srv['country']}")
-            out.append("")
+            # First instance keeps the server name; the rest get "(ALT n)".
+            label = name if i == 0 else f"{name} (ALT {i})"
+            i += 1
+            out += [vu["uri"], f"##name: {label}"]
+            if icon:
+                out.append(f"##icon: {icon}")
+            out += [*_jitsi_comment(vu), ""]
     return "\n".join(out)
 
 

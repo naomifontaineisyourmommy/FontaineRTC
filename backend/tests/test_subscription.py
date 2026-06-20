@@ -58,25 +58,59 @@ def test_render_admin_disabled_returns_none():
     assert subserver._render_admin(mgr) is None
 
 
-def test_render_admin_only_live_uris():
+def test_render_admin_alt_names_icon_comment():
     data = {"servers": [
-        {"name": "DE-01", "country": "Germany", "users": [
-            {"uri": "olcrtc://jitsi?datachannel@any#abc", "uri_live": True},
-            {"uri": "olcrtc://jitsi?datachannel@any#dead", "uri_live": False},  # not live → skip
-            {"uri": "", "uri_live": True},                                     # no uri → skip
-        ]},
-        {"name": "ES-01", "country": "Spain", "users": [
-            {"uri": "olcrtc://wbstream?seichannel@room#def", "uri_live": True},
+        {"name": "ES-02", "country": "Spain", "users": [
+            {"uri": "u1", "uri_live": True, "carrier": "jitsi",
+             "jitsi_chosen_domain": "https://meet.example.com/"},
+            {"uri": "uDead", "uri_live": False, "carrier": "jitsi"},        # skipped
+            {"uri": "u2", "uri_live": True, "carrier": "jitsi",
+             "jitsi_chosen_domain": "https://meet.example.com"},
+            {"uri": "u3", "uri_live": True, "carrier": "wbstream"},         # no comment
         ]},
     ]}
     mgr = FakeAdmin(FakeCfg({"sub_enabled": True, "sub_name": "Pool", "sub_refresh": "10m"}), data)
-    text = subserver._render_admin(mgr)
-    lines = text.splitlines()
-    assert lines[0] == "#name: Pool"
-    assert lines[2] == "#refresh: 10m"
-    assert "olcrtc://jitsi?datachannel@any#abc" in lines
-    assert "##name: DE-01" in lines and "##comment: Germany" in lines
-    assert "olcrtc://wbstream?seichannel@room#def" in lines and "##name: ES-01" in lines
-    # only the two live instances make it in — dead/empty URIs are excluded
-    assert "olcrtc://jitsi?datachannel@any#dead" not in lines
-    assert sum(1 for ln in lines if ln.startswith("olcrtc://")) == 2
+    lines = subserver._render_admin(mgr).splitlines()
+    # first live → server name; subsequent → "(ALT n)"
+    assert "##name: ES-02" in lines
+    assert "##name: ES-02 (ALT 1)" in lines      # second live (u2)
+    assert "##name: ES-02 (ALT 2)" in lines      # third live (u3, wbstream)
+    assert "##name: ES-02 (ALT 3)" not in lines  # dead one didn't count
+    # country icon on every entry
+    assert lines.count("##icon: 🇪🇸") == 3
+    # jitsi → bare domain comment; wbstream → none
+    assert lines.count("##comment: meet.example.com") == 2
+    assert sum(1 for ln in lines if ln.startswith("##comment:")) == 2
+    assert sum(1 for ln in lines if ln in ("u1", "u2", "u3")) == 3 and "uDead" not in lines
+
+
+def _fake_node(users, cfg):
+    class Lock:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    class M:
+        pass
+    m = M()
+    m.cfg = cfg
+    m.lock = Lock()
+    m.users = {i: u for i, u in enumerate(users)}
+    return m
+
+
+def test_render_node_alt_names_and_jitsi_comment(monkeypatch):
+    import fontaine.node.instance as inst
+    monkeypatch.setattr(inst, "public", lambda u: u)
+    users = [
+        {"uri": "u1", "uri_live": True, "carrier": "jitsi",
+         "jitsi_chosen_domain": "https://m.example.com/"},
+        {"uri": "uDead", "uri_live": False, "carrier": "jitsi"},
+        {"uri": "u3", "uri_live": True, "carrier": "wbstream"},
+    ]
+    mgr = _fake_node(users, FakeCfg({"sub_enabled": True, "sub_name": "N", "sub_refresh": "10m"}))
+    lines = subserver._render_node(mgr).splitlines()
+    assert "##name: ALT 1" in lines and "##name: ALT 2" in lines
+    assert "##name: ALT 3" not in lines              # only two live
+    assert "##comment: m.example.com" in lines       # jitsi: scheme + trailing slash stripped
+    assert sum(1 for ln in lines if ln.startswith("##comment:")) == 1   # wbstream has none
+    assert "##icon:" not in "\n".join(lines)         # node has no country icon

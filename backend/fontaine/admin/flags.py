@@ -25,6 +25,19 @@ _CC = {
 }
 
 
+def _code(country: str) -> str:
+    return _CC.get(country) or next(
+        (c for n, c in _CC.items() if country.lower() in n.lower()), "")
+
+
+def flag_emoji(country: str) -> str:
+    """Country name -> emoji flag (e.g. 'Spain' -> 🇪🇸); '' if unknown."""
+    code = _code(country)
+    if len(code) != 2:
+        return ""
+    return "".join(chr(0x1F1E6 + ord(ch) - ord("A")) for ch in code.upper())
+
+
 def flag(country: str) -> str:
     code = _CC.get(country) or next(
         (c for n, c in _CC.items() if country.lower() in n.lower()), "")
