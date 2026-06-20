@@ -364,6 +364,10 @@ code {
 .code-block .jsc { color: var(--ft-log-dim); font-style: italic; } /* comment */
 .code-block .jsp { color: var(--ft-log-base); }                   /* punct   */
 
+/* WB Token help dialog: wider, smaller command font */
+.modal.modal-wbhelp { max-width: 920px; }
+.modal-wbhelp .code-block { font-size: 0.65rem; }
+
 /* ── toasts ── */
 .toasts { position: fixed; bottom: 18px; right: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 300; }
 .toast {

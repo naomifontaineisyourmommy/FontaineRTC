@@ -21,13 +21,14 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { err: Err
 // becomes the containing block for position:fixed, which would otherwise clip a
 // nested modal inside its parent.
 export function Modal({
-  title, onClose, children, footer, headExtra,
+  title, onClose, children, footer, headExtra, className,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
   headExtra?: ReactNode;
+  className?: string;   // extra class on .modal (e.g. to widen a specific dialog)
 }) {
   // Play a brief exit animation before actually unmounting (React would drop the
   // node instantly otherwise, making the close feel abrupt).
@@ -38,7 +39,7 @@ export function Modal({
   }, [onClose]);
   return createPortal(
     <div className={`modal-overlay ${closing ? "is-closing" : ""}`} onClick={close}>
-      <div className={`modal ${closing ? "is-closing" : ""}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal ${className ?? ""} ${closing ? "is-closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <span className="modal-title">{title}</span>
           {headExtra}

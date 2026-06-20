@@ -283,7 +283,8 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
         title="Автоматически поднимать инстанс при старте панели и перезапускать его, если процесс упал или завершил сессию" />
 
       {showWbHelp && (
-        <Modal title="Получение токена WB Stream" onClose={() => setShowWbHelp(false)}>
+        <Modal title="Получение токена WB Stream" className="modal-wbhelp"
+          onClose={() => setShowWbHelp(false)}>
           <p className="muted" style={{ lineHeight: 1.55, marginBottom: 12 }}>
             Запускать в консоли вкладки <code>stream.wb.ru</code>, будучи залогиненным.
             Команда сканирует хранилище, находит именно WBStream-токен (по payload&apos;у
