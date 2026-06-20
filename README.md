@@ -12,6 +12,7 @@
 <img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/9e4f916d-443d-40db-a52a-ce24c03671e8" />
 <img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/fcba91e2-b3f5-479a-b1fb-14180a5a7004" />
 <img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/c8191cf9-ee98-4a6c-bdd9-e9c7d1d9cd1d" />
+<img width="1920" height="912" alt="Image" src="https://github.com/user-attachments/assets/bac6b2a6-e57e-4200-9044-60dca89ed36c" />
 
 ## Установка на сервер (Linux, root)
 
