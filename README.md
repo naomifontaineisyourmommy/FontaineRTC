@@ -5,11 +5,13 @@
 - **node** — запускает экземпляры `olcrtc` и VPN-протокол `WDTT` на VPS;
 - **admin** — мониторит и управляет десятками нод из единого интерфейса.
 
-<img width="1920" height="920" alt="Image" src="https://github.com/user-attachments/assets/1bee96b0-c4e9-44dd-a419-cba34b839be1" />
-<img width="1920" height="920" alt="Image" src="https://github.com/user-attachments/assets/f7ec9fa0-29a3-4e0a-85b9-b94b0b8a1692" />
-<img width="1920" height="920" alt="Image" src="https://github.com/user-attachments/assets/4f706255-5968-4dca-9da5-528e0f2e0107" />
-<img width="1920" height="920" alt="Image" src="https://github.com/user-attachments/assets/7abd7c20-30b6-421b-9c9c-4f4d0129c8c2" />
-<img width="1920" height="920" alt="Image" src="https://github.com/user-attachments/assets/454e46ab-4199-46ba-96a2-65b837be2605" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/b414851a-db78-4063-be0f-a43c5b418784" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/e27d8aa5-3560-486b-8ca0-211dc41d9b54" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/9bec48a6-08d9-461a-bd02-faa4f3a5bbce" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/cb6a1cb4-909a-4a1e-b55c-d31bf45d1668" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/9e4f916d-443d-40db-a52a-ce24c03671e8" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/fcba91e2-b3f5-479a-b1fb-14180a5a7004" />
+<img width="1920" height="908" alt="Image" src="https://github.com/user-attachments/assets/c8191cf9-ee98-4a6c-bdd9-e9c7d1d9cd1d" />
 
 ## Установка на сервер (Linux, root)
 
@@ -20,12 +22,12 @@
 [proxy-turn-vk-android](https://github.com/amurcanov/proxy-turn-vk-android).
 
 
-# Установка в режиме Node (запускает olcrtc и wdtt на этом VPS)
+### Установка в режиме Node (запускает olcrtc и wdtt на этом VPS)
 ```sh
 curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh | sudo FONTAINE_ROLE=node bash
 ```
 
-# Установка в режиме Admin (мониторинг и управление нодами)
+### Установка в режиме Admin (мониторинг и управление нодами)
 ```sh
 curl -fsSL https://raw.githubusercontent.com/naomifontaineisyourmommy/FontaineRTC/master/deploy/install.sh | sudo FONTAINE_ROLE=admin bash
 ```
