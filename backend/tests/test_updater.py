@@ -7,6 +7,13 @@ import pytest
 from fontaine import updater
 
 
+@pytest.fixture(autouse=True)
+def _clear_caches():
+    updater._release_cache.clear()
+    updater._latest_cache.update(sha="", msg="", at=0.0)
+    yield
+
+
 def test_skips_download_when_current(tmp_path, monkeypatch):
     dest = tmp_path / "olcrtc-linux-amd64"
     dest.write_bytes(b"existing")
@@ -196,3 +203,34 @@ def test_release_fallback_when_asset_absent_everywhere(monkeypatch):
     url, tag = updater.release_asset_url("owner/repo", "olcrtc-linux-amd64")
     assert tag == "latest" and url == \
         "https://github.com/owner/repo/releases/latest/download/olcrtc-linux-amd64"
+
+
+# ── changelog notes in the update prompt ────────────────────────────────────────
+def test_clean_notes_strips_coauthor_and_trims():
+    txt = "Title\n\nBody line\n\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>\n"
+    assert updater.clean_notes(txt) == "Title\n\nBody line"
+    assert updater.clean_notes("") == ""
+    # case-insensitive, handles CRLF
+    assert updater.clean_notes("a\r\nco-authored-by: x <y>\r\n") == "a"
+
+
+def test_version_info_includes_notes(monkeypatch):
+    monkeypatch.setattr(updater, "current_commit", lambda: "aaaaaaa")
+    monkeypatch.setattr(updater, "latest_commit", lambda: "bbbbbbb")
+    monkeypatch.setattr(updater, "latest_commit_message", lambda: "panel changelog")
+    monkeypatch.setattr(updater, "binary_version", lambda: "v1")
+    monkeypatch.setattr(updater, "latest_binary_tag", lambda: "v2")
+    monkeypatch.setattr(updater, "latest_binary_notes", lambda: "olcrtc changelog")
+    info = updater.version_info(check_binary=True)
+    assert info["update_available"] is True
+    assert info["notes"] == "panel changelog" and info["binary_notes"] == "olcrtc changelog"
+
+
+def test_version_info_no_notes_when_current(monkeypatch):
+    monkeypatch.setattr(updater, "current_commit", lambda: "x")
+    monkeypatch.setattr(updater, "latest_commit", lambda: "x")
+    monkeypatch.setattr(updater, "binary_version", lambda: "v1")
+    monkeypatch.setattr(updater, "latest_binary_tag", lambda: "v1")
+    info = updater.version_info(check_binary=True)
+    assert info["update_available"] is False
+    assert info["notes"] == "" and info["binary_notes"] == ""

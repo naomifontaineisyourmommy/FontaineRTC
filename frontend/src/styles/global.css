@@ -405,6 +405,17 @@ code {
 }
 .update-error { color: var(--ft-danger); font-size: 0.85rem; max-width: 360px; }
 
+/* ── per-package changelog in the "update available" prompt ── */
+.upd-item { margin-bottom: 12px; }
+.upd-item:last-child { margin-bottom: 0; }
+.upd-notes {
+  margin: 6px 0 0; padding: 8px 10px; border-radius: 8px;
+  background: var(--ft-surface-3); border: 1px solid var(--ft-border);
+  color: var(--ft-text-muted); font-family: var(--ft-font-body);
+  font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+  max-height: 30vh; overflow: auto;
+}
+
 /* ── empty state ── */
 .empty { text-align: center; color: var(--ft-text-faint); padding: 48px 22px; }
 

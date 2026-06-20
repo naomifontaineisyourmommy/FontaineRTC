@@ -74,6 +74,12 @@
 Открытые (без токена): `GET /healthz`, `GET /api/updating`, `GET /api/version`,
 а у админки ещё `POST /push/v1/{server_id}` (приём push от нод).
 
+> `GET /api/version` отдаёт версии + флаг `update_available`. Для пакетов с
+> доступным обновлением добавляются заметки об изменениях: `notes` (commit-message
+> FontaineRTC), `binary_notes` (release-body olcrtc), `wdtt.notes` (release-body
+> WDTT). Строки `Co-Authored-By:` из них вырезаются. Их показывает окно
+> «Доступно обновление».
+
 ### Админка
 - `GET /api/data` — агрегированный дашборд (серверы, группы, инстансы, версии);
   каждый сервер содержит блок `wdtt` (статус + пользователи WDTT)

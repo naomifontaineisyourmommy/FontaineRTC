@@ -84,11 +84,14 @@ def is_up_to_date() -> bool:
 def version_info() -> dict:
     cur, lat = installed_version(), latest_version()
     inst = is_installed()
+    upd = bool(inst and cur and lat and cur != lat)
     return {
         "installed": inst,
         "version": cur or ("unknown" if inst else ""),
         "latest": lat,
-        "update_available": bool(inst and cur and lat and cur != lat),
+        "update_available": upd,
+        # release notes of the new WDTT version (empty when up to date)
+        "notes": updater.clean_notes(updater._release_info(WDTT_REPO, APK_ASSET)[2]) if upd else "",
         "repo": WDTT_REPO,
     }
 

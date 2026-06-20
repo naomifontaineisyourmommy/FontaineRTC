@@ -27,10 +27,20 @@ RESTART_CMD = os.environ.get("FONTAINE_RESTART_CMD", "systemctl restart fontaine
 
 _UA = {"User-Agent": "FontaineRTC-updater"}
 
-# cache the latest remote commit/tag briefly to avoid hammering the GitHub API
+# cache the latest remote commit/release briefly to avoid hammering the GitHub API
 _LATEST_TTL = 300.0
-_latest_cache: dict = {"sha": "", "at": 0.0}
-_bin_cache: dict = {"tag": "", "at": 0.0}
+_latest_cache: dict = {"sha": "", "msg": "", "at": 0.0}
+_release_cache: dict = {}   # "<repo>|<asset>" -> {at, url, tag, body}
+
+
+def clean_notes(text: str) -> str:
+    """Tidy a commit message / release body for display: drop trailer lines like
+    'Co-Authored-By: …' (they only confuse users) and trim surrounding blank lines."""
+    if not text:
+        return ""
+    lines = [ln for ln in text.replace("\r\n", "\n").split("\n")
+             if not ln.strip().lower().startswith("co-authored-by:")]
+    return "\n".join(lines).strip()
 
 
 def _api(url: str, timeout: int = 15) -> object:
@@ -49,8 +59,9 @@ def _asset_url(rel: dict, asset_name: str) -> str:
     return ""
 
 
-def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
-    """Return (download_url, tag) for `asset_name` in the newest release of `repo`.
+def _release_info(repo: str, asset_name: str) -> tuple[str, str, str]:
+    """Return (download_url, tag, body) for `asset_name` in the newest release of
+    `repo`, cached briefly (shared by tag/notes/download so we hit GitHub once).
 
     Considers BOTH `/releases/latest` (authoritative for the latest full release,
     but excludes pre-releases) and the `/releases` list (includes pre-releases, but
@@ -58,7 +69,13 @@ def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
     replication lag we hit in practice). We collect every published release that
     actually carries the asset from both sources and pick the newest by
     `published_at`. Falls back to the conventional latest/download path."""
-    candidates: list[tuple[str, str, str]] = []   # (published_at, tag, url)
+    key = f"{repo}|{asset_name}"
+    now = time.time()
+    cached = _release_cache.get(key)
+    if cached and now - cached["at"] < _LATEST_TTL:
+        return cached["url"], cached["tag"], cached["body"]
+
+    candidates: list[tuple[str, str, str, str]] = []   # (published_at, tag, url, body)
 
     def consider(rel: dict) -> None:
         if not isinstance(rel, dict) or rel.get("draft"):
@@ -66,7 +83,7 @@ def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
         url = _asset_url(rel, asset_name)
         if url:
             candidates.append((rel.get("published_at") or rel.get("created_at") or "",
-                               rel.get("tag_name", "?"), url))
+                               rel.get("tag_name", "?"), url, rel.get("body") or ""))
 
     try:
         consider(_api(f"https://api.github.com/repos/{repo}/releases/latest"))
@@ -83,10 +100,18 @@ def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
     if candidates:
         # ISO-8601 UTC timestamps sort lexicographically; newest first.
         candidates.sort(key=lambda c: c[0], reverse=True)
-        _, tag, url = candidates[0]
-        return url, tag
+        _, tag, url, body = candidates[0]
+        _release_cache[key] = {"at": now, "url": url, "tag": tag, "body": body}
+        return url, tag, body
+    if cached:                                  # serve stale on a transient failure
+        return cached["url"], cached["tag"], cached["body"]
+    return (f"https://github.com/{repo}/releases/latest/download/{asset_name}", "latest", "")
 
-    return (f"https://github.com/{repo}/releases/latest/download/{asset_name}", "latest")
+
+def release_asset_url(repo: str, asset_name: str) -> tuple[str, str]:
+    """(download_url, tag) for the newest release carrying `asset_name`."""
+    url, tag, _ = _release_info(repo, asset_name)
+    return url, tag
 
 
 def binary_download_url(repo: str = BINARY_REPO) -> tuple[str, str]:
@@ -134,18 +159,14 @@ def binary_version() -> str:
 
 
 def latest_binary_tag() -> str:
-    """Newest olcrtc release tag (cached briefly)."""
-    now = time.time()
-    if _bin_cache["tag"] and now - _bin_cache["at"] < _LATEST_TTL:
-        return _bin_cache["tag"]
-    try:
-        _, tag = binary_download_url()
-    except Exception:
-        tag = ""
-    if tag and tag != "latest":
-        _bin_cache.update(tag=tag, at=now)
-        return tag
-    return _bin_cache["tag"]
+    """Newest olcrtc release tag (cached briefly), '' if unknown."""
+    tag = _release_info(BINARY_REPO, BINARY_ASSET)[1]
+    return tag if tag and tag != "latest" else ""
+
+
+def latest_binary_notes() -> str:
+    """Release notes (body) of the newest olcrtc release, cleaned for display."""
+    return clean_notes(_release_info(BINARY_REPO, BINARY_ASSET)[2])
 
 
 def install_dir() -> Path:
@@ -283,11 +304,18 @@ def latest_commit() -> str:
     try:
         data = _api(f"https://api.github.com/repos/{PANEL_REPO}/commits/{PANEL_BRANCH}")
         sha = data.get("sha", "") if isinstance(data, dict) else ""
+        msg = data.get("commit", {}).get("message", "") if isinstance(data, dict) else ""
     except Exception:
-        sha = ""
+        sha = msg = ""
     if sha:
-        _latest_cache.update(sha=sha, at=now)
+        _latest_cache.update(sha=sha, msg=msg, at=now)
     return sha or _latest_cache["sha"]
+
+
+def latest_commit_message() -> str:
+    """Message of the newest panel commit, cleaned for display."""
+    latest_commit()    # refresh the cache (no extra call within TTL)
+    return clean_notes(_latest_cache.get("msg", ""))
 
 
 def _panel_up_to_date() -> bool:
@@ -328,6 +356,8 @@ def version_info(check_binary: bool = False) -> dict:
         "current": cur[:7] if cur else "unknown",
         "latest": lat[:7] if lat else "",
         "update_available": panel_upd,
+        # commit message of the new panel version (empty when up to date)
+        "notes": latest_commit_message() if panel_upd else "",
     }
     if check_binary:
         bcur, blat = binary_version(), latest_binary_tag()
@@ -338,5 +368,6 @@ def version_info(check_binary: bool = False) -> dict:
         # sidecar). Only an empty remote tag (offline / API down) suppresses it,
         # so we never false-prompt when we couldn't check. Matches is_up_to_date.
         binary_upd = bool(blat) and bcur != blat
+        info["binary_notes"] = latest_binary_notes() if binary_upd else ""
         info["update_available"] = panel_upd or binary_upd
     return info

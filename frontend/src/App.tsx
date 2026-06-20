@@ -13,13 +13,22 @@ type AuthState = "checking" | "needed" | "ok";
 interface UpdState { show: boolean; step: string; index: number; total: number; error: string; }
 const NO_UPD: UpdState = { show: false, step: "", index: 0, total: 4, error: "" };
 
-interface Ver { current: string; latest: string; binary: string; binary_latest: string; wdtt: string; }
+interface Ver {
+  current: string; latest: string; notes: string;
+  binary: string; binary_latest: string; binary_notes: string;
+  wdtt: string; wdtt_latest: string; wdtt_notes: string; wdtt_update: boolean;
+}
+const NO_VER: Ver = {
+  current: "", latest: "", notes: "",
+  binary: "", binary_latest: "", binary_notes: "",
+  wdtt: "", wdtt_latest: "", wdtt_notes: "", wdtt_update: false,
+};
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [auth, setAuth] = useState<AuthState>("checking");
   const [upd, setUpd] = useState<UpdState>(NO_UPD);
-  const [ver, setVer] = useState<Ver>({ current: "", latest: "", binary: "", binary_latest: "", wdtt: "" });
+  const [ver, setVer] = useState<Ver>(NO_VER);
   const [prompt, setPrompt] = useState(false);
   const [nodeMode, setNodeMode] = useState<"olcrtc" | "wdtt">("olcrtc");
   const wasUpdating = useRef(false);
@@ -45,10 +54,12 @@ export default function App() {
     fetch("/api/version")
       .then((r) => r.json())
       .then((d) => {
+        const w = d.wdtt || {};
         setVer({
-          current: d.current || "", latest: d.latest || "",
-          binary: d.binary || "", binary_latest: d.binary_latest || "",
-          wdtt: (d.wdtt && d.wdtt.version) || "",
+          current: d.current || "", latest: d.latest || "", notes: d.notes || "",
+          binary: d.binary || "", binary_latest: d.binary_latest || "", binary_notes: d.binary_notes || "",
+          wdtt: w.version || "", wdtt_latest: w.latest || "", wdtt_notes: w.notes || "",
+          wdtt_update: !!w.update_available,
         });
         if (d.update_available) setPrompt(true);
       })
@@ -96,6 +107,16 @@ export default function App() {
       onClose={() => setUpd(NO_UPD)} />
   ) : null;
 
+  const updItem = (name: string, from: string, to: string, notes: string) => (
+    <div className="upd-item">
+      <div className="row-between">
+        <span className="muted">{name}</span>
+        <span><code>{from}</code> → <code>{to}</code></span>
+      </div>
+      {notes && <pre className="upd-notes">{notes}</pre>}
+    </div>
+  );
+
   const updatePrompt = (prompt && !upd.show) ? (
     <Modal title="Доступно обновление" onClose={() => setPrompt(false)}
       footer={<>
@@ -103,18 +124,10 @@ export default function App() {
         <button className="btn" onClick={startUpdate}>Обновить</button>
       </>}>
       <p className="muted" style={{ marginBottom: 12 }}>Доступна новая версия. Обновить сейчас?</p>
-      {ver.current !== ver.latest && ver.latest && (
-        <div className="row-between" style={{ marginBottom: 6 }}>
-          <span className="muted">FontaineRTC</span>
-          <span><code>{ver.current}</code> → <code>{ver.latest}</code></span>
-        </div>
-      )}
-      {ver.binary && ver.binary_latest && ver.binary !== ver.binary_latest && (
-        <div className="row-between">
-          <span className="muted">OlcRTC</span>
-          <span><code>{ver.binary}</code> → <code>{ver.binary_latest}</code></span>
-        </div>
-      )}
+      {ver.latest && ver.current !== ver.latest && updItem("FontaineRTC", ver.current, ver.latest, ver.notes)}
+      {ver.binary && ver.binary_latest && ver.binary !== ver.binary_latest
+        && updItem("OlcRTC", ver.binary, ver.binary_latest, ver.binary_notes)}
+      {ver.wdtt_update && updItem("WDTT", ver.wdtt, ver.wdtt_latest, ver.wdtt_notes)}
     </Modal>
   ) : null;
 
