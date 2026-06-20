@@ -332,6 +332,38 @@ label { font-size: 0.78rem; color: var(--ft-text-muted); display: block; margin-
 .uri-copy:hover { border-color: var(--ft-accent); color: var(--ft-text); }
 .section-title { padding: 16px 22px 4px; font-size: 0.78rem; color: var(--ft-text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
 
+/* ── help dot + code block ── */
+.help-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; padding: 0; border-radius: 50%; line-height: 1;
+  font-size: 0.7rem; font-weight: 700; font-family: inherit; cursor: pointer;
+  background: var(--ft-accent-soft); color: var(--ft-accent);
+  border: 1px solid var(--ft-accent); transition: background 0.15s, color 0.15s;
+}
+.help-dot:hover { background: var(--ft-accent); color: var(--ft-text-on-accent); }
+
+code {
+  font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.85em;
+  background: var(--ft-surface-3); border: 1px solid var(--ft-border);
+  border-radius: 5px; padding: 1px 5px; color: var(--ft-text);
+}
+
+.code-block {
+  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.76rem; line-height: 1.6; tab-size: 2;
+  background: var(--ft-log-bg); color: var(--ft-log-text);
+  border: 1px solid var(--ft-border); border-radius: 10px; padding: 12px;
+  white-space: pre; overflow: auto; max-height: 52vh; margin: 0;
+}
+.code-block.uri-copy { cursor: pointer; transition: border-color 0.15s; }
+.code-block.uri-copy:hover { border-color: var(--ft-accent); }
+.code-block .jsk { color: var(--ft-log-id); font-weight: 600; }   /* keyword */
+.code-block .jss { color: var(--ft-log-ok); }                     /* string  */
+.code-block .jsn { color: var(--ft-log-warn); }                   /* number  */
+.code-block .jsr { color: var(--ft-log-dest); }                   /* regex   */
+.code-block .jsc { color: var(--ft-log-dim); font-style: italic; } /* comment */
+.code-block .jsp { color: var(--ft-log-base); }                   /* punct   */
+
 /* ── toasts ── */
 .toasts { position: fixed; bottom: 18px; right: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 300; }
 .toast {

@@ -3,7 +3,30 @@ import { apiGet, apiPost, sseUrl } from "../api/client";
 import { Modal, Peers, Switch, copy, fmtBytes, fmtUptime, useToast } from "../components/ui";
 import { CARRIERS, compatTransports, PARAM_FIELDS } from "../lib/compat";
 import { highlightLine } from "../lib/logHighlight";
+import { highlightJs } from "../lib/jsHighlight";
 import { WdttPanel } from "./WdttPanel";
+
+// Console one-liner that extracts the WB Stream account token (shown in the help
+// modal next to the WB Token field). String.raw keeps the regex backslashes
+// byte-exact so the copied command runs verbatim.
+const WB_TOKEN_CMD = String.raw`(() => {
+  const dec = t => { try {
+    let p = t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    p += '='.repeat((4 - p.length % 4) % 4);
+    return JSON.parse(atob(p));
+  } catch { return null; } };
+  const cands = new Map();
+  const add = s => (String(s).match(/eyJ[A-Za-z0-9_=-]+\.[A-Za-z0-9_=-]+\.[A-Za-z0-9_=-]+/g) || [])
+    .forEach(t => { const p = dec(t); if (p && p.client_id === 'stream' && p.user) cands.set(t, p); });
+  for (const st of [localStorage, sessionStorage]) for (let i=0;i<st.length;i++) add(st.getItem(st.key(i)));
+  add(document.cookie);
+  const list = [...cands.entries()].sort((a,b)=>(b[1].validation_key?1:0)-(a[1].validation_key?1:0));
+  if (!list.length) return console.warn('Токен не найден. Открой stream.wb.ru, залогинься и запусти снова (или используй fallback ниже).');
+  const [tok, p] = list[0];
+  console.log('%cWB Stream token (user '+p.user+'):','color:green;font-weight:bold');
+  console.log(tok);
+  try { copy(tok); console.log('%c✓ скопировано в буфер обмена','color:green'); } catch {}
+})();`;
 
 interface Instance {
   id: string; carrier: string; transport: string; running: boolean;
@@ -135,6 +158,7 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
   onRefresh: () => void;
 }) {
   const [form, setForm] = useState<Instance>(inst);
+  const [showWbHelp, setShowWbHelp] = useState(false);
   const toast = useToast();
   const timer = useRef<number | null>(null);
   useEffect(() => { setForm(inst); }, [inst.id]); // reset when switching instance
@@ -233,7 +257,11 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
       )}
       {form.carrier === "wbstream" && (
         <div className="field">
-          <label>WB Token (owner-mode)</label>
+          <label className="row" style={{ gap: 6 }}>
+            WB Token (owner-mode)
+            <button type="button" className="help-dot" title="Как получить токен"
+              onClick={() => setShowWbHelp(true)}>?</button>
+          </label>
           <input value={form.wb_token} disabled={locked}
             onChange={(e) => commit({ wb_token: e.target.value }, true)} placeholder="bearer-токен" />
         </div>
@@ -253,6 +281,19 @@ function InstancePanel({ inst, domains, onAction, onRefresh }: {
       <Switch checked={form.auto_restart} disabled={locked}
         onChange={(v) => commit({ auto_restart: v })} label="Автозапуск"
         title="Автоматически поднимать инстанс при старте панели и перезапускать его, если процесс упал или завершил сессию" />
+
+      {showWbHelp && (
+        <Modal title="Получение токена WB Stream" onClose={() => setShowWbHelp(false)}>
+          <p className="muted" style={{ lineHeight: 1.55, marginBottom: 12 }}>
+            Запускать в консоли вкладки <code>stream.wb.ru</code>, будучи залогиненным.
+            Команда сканирует хранилище, находит именно WBStream-токен (по payload&apos;у
+            JWT: <code>client_id: "stream"</code>), печатает его и кладёт в буфер обмена:
+          </p>
+          <pre className="code-block uri-copy" title="Нажмите, чтобы скопировать"
+            onClick={() => { copy(WB_TOKEN_CMD); toast.push("Команда скопирована"); }}
+            dangerouslySetInnerHTML={{ __html: highlightJs(WB_TOKEN_CMD) }} />
+        </Modal>
+      )}
     </div>
   );
 }
